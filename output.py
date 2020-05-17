@@ -1,4 +1,5 @@
 from osgeo import ogr
+import matplotlib.pyplot as plt
 import os
 
 class Shapefile:
@@ -39,14 +40,17 @@ class Shapefile:
 
         ogr.GetDriverByName("ESRI Shapefile").CopyDataSource(in_ds, path+"/"+self.filename+"_lines.shp")
 
-    def	create_points(self, path):
+    def	create_points(self, path, dx, dy, center=True):
+        if center == False:
+            dx = 0
+            dy = 0
         csvFile= path+"/"+self.filename+"_points.csv"
         f = open(csvFile,'w')
 
         if 'group' in self.g.vs.attributes():
             f.write("id,x,y,degree,wDegree,pagerank,closeness,betweennes,cc,eigenvecto,sPathMean,group\n")
             for v in self.g.vs:
-                f.write(	str(v["label"])			+	","	+	str(v["x"])					+	","		+	str(v["y"])					+	","	)
+                f.write(	str(v["label"])			+	","	+	str(v["x"] + dx/2.)					+	","		+	str(v["y"] + dy/2.)					+	","	)
                 f.write(	str(v["degree"])		+	","	+	str(v["weightedDegree"])	+	","		+	str(v["pagerank"])			+	","	)
                 f.write(	str(v["closeness"])		+	","	+	str(v["betweenness"])		+	","		+	str(v["clusterCoeficient"])	+	","	)
                 f.write(	str(v["eigenvectorCentrality"])+ ","+str(v["shortestPathMean"])	+	"," 	+	str(v["group"])				+	"\n")
@@ -72,7 +76,7 @@ class Shapefile:
         else:
             f.write("id,x,y,degree,wDegree,closeness,betweennes,cc,sPathMean\n")
             for v in self.g.vs:
-                f.write(	str(v["label"])			+	","	+	str(v["x"])					+	","		+	str(v["y"])					+	","	)
+                f.write(	str(v["label"])			+	","	+	str(v["x"] + dx/2.)					+	","		+	str(v["y"] + dy/2.)					+	","	)
                 f.write(	str(v["degree"])		+	","	+	str(v["weightedDegree"])	+	","	)
                 f.write(	str(v["closeness"])		+	","	+	str(v["betweenness"])		+	","		+	str(v["clusterCoeficient"])	+	","	)
                 f.write(	str(v["shortestPathMean"]) +"\n")
@@ -101,7 +105,7 @@ class Shapefile:
 
         ogr.GetDriverByName("ESRI Shapefile").CopyDataSource(in_ds, path+"/"+self.filename+"_points.shp")
 
-    def	create_polygons(self, path, cellsize ):
+    def	create_polygons(self, path, dx, dy):
         csvFile= path+"/"+self.filename+"_polygons.csv"
         f = open(csvFile,'w')
 
@@ -111,9 +115,9 @@ class Shapefile:
                 f.write(	str(v["label"])	+																								',"')
                 f.write(	"POLYGON ((")
                 f.write(	"%s %s,"	%	(	str(	v["x"]					) 	, 	str(	v["y"]					)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]	+	cellsize	)	,	str(	v["y"]					)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]	+	cellsize	)	,	str(	v["y"]	+	cellsize	)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]					)	,	str(	v["y"]	+	cellsize	)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]	+	dx	)	,	str(	v["y"]					)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]	+	dx	)	,	str(	v["y"]	+	dy	)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]					)	,	str(	v["y"]	+	dy	)	)	)
                 f.write(	'%s %s))",'	%	(	str(	v["x"]					) 	, 	str(	v["y"]					)	)	)
                 f.write(	str(v["degree"])		+	","	+	str(v["weightedDegree"])	+	","		+	str(v["pagerank"])			+	","	)
                 f.write(	str(v["closeness"])		+	","	+	str(v["betweenness"])		+	","		+	str(v["clusterCoeficient"])	+	","	)
@@ -146,9 +150,9 @@ class Shapefile:
                 f.write(	str(v["label"])	+																								',"')
                 f.write(	"POLYGON ((")
                 f.write(	"%s %s,"	%	(	str(	v["x"]					) 	, 	str(	v["y"]					)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]	+	cellsize	)	,	str(	v["y"]					)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]	+	cellsize	)	,	str(	v["y"]	+	cellsize	)	)	)
-                f.write(	"%s %s,"	%	(	str(	v["x"]					)	,	str(	v["y"]	+	cellsize	)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]	+	dx	)	,	str(	v["y"]					)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]	+	dx	)	,	str(	v["y"]	+	dy	)	)	)
+                f.write(	"%s %s,"	%	(	str(	v["x"]					)	,	str(	v["y"]	+	dy	)	)	)
                 f.write(	'%s %s))",'	%	(	str(	v["x"]					) 	, 	str(	v["y"]					)	)	)
                 f.write(	str(v["degree"])		+	","	+	str(v["weightedDegree"])	+	",")
                 f.write(	str(v["closeness"])		+	","	+	str(v["betweenness"])		+	","		+	str(v["clusterCoeficient"])	+	","	)
@@ -180,13 +184,13 @@ class Shapefile:
 
         ogr.GetDriverByName("ESRI Shapefile").CopyDataSource(in_ds, path+"/"+self.filename+"_polygons.shp")
 
-    def	create_shape(self, path,cellsize):
+    def	create_shape(self, path, dx=None, dy=None):
         current_path 	=	os.getcwd()
         path			=	current_path+path[1:]
         self.create_lines(path)
-        self.create_points(path)
-        if cellsize != -1:
-            self.create_polygons(path, cellsize)
+        self.create_points(path, dx, dy, center=True)
+        if dx != None and dy != None:
+            self.create_polygons(path, dx, dy)
 
 class TextFiles:
 
@@ -204,3 +208,24 @@ class TextFiles:
         f.write(str(threshold) + "," + str(avg_cluster) + "," + str(avg_degree) + "," + str(diameter) + "," + str(
             shortpath_mean) + "\n")
         f.close()
+
+class Plots:
+
+    def __init__(self, g):
+        self.g = g
+
+    def plot_degree_histogram(self):
+        plt.hist(self.g.vs["degree"], bins='auto', alpha=0.7, rwidth=0.85)
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Degree Values')
+        plt.ylabel('Frequency')
+        plt.title('Degree Histogram')
+        plt.show()
+
+    def plot_correlation_histogram(self, corr_matrix):
+        plt.hist(corr_matrix, bins='auto', alpha=0.7, rwidth=0.85)
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Correlation')
+        plt.ylabel('Frequency')
+        plt.title('Correlation Histogram')
+        plt.show()

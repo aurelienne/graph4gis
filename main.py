@@ -53,7 +53,11 @@ shortpath_mean = g.get_average_shortest_path_mean()
 
 #g.plot("grafo.svg")
 
-out.Shapefile(g.graph,"grafo_"+str(threshold)).create_shape("", -1)
+out.Shapefile(g.graph,"grafo_"+str(threshold)).create_shape("", dx, dy)
 
 global_file = out.TextFiles(g, "graph_TamanduateiClip_correlation_10032019.csv")
 global_file.create_csv(threshold)
+
+plt = out.Plots(g.graph)
+plt.plot_degree_histogram()
+#plt.plot_correlation_histogram(matrix)

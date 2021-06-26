@@ -1,15 +1,10 @@
+import datetime
 import sys
 import data as rd
 import graph
+from calc import Stats
 import output as out
-
-# Recorte SP
-#x1 = -46.826
-#y1 = -23.3562
-#x2 = -46.3648
-#y2 = -24.0079
-#dx = 0.00747135
-#dy = -0.00675451
+import numpy as np
 
 # Recorte Bacia Tamanduatei (PPI)
 nx = 36
@@ -31,33 +26,75 @@ y2 = y1 + ny*dy
 #x2 = x1 + nx*dx
 #y2 = y1 + ny*dy
 
+# RMSP + 10km
+#nx = 172
+#ny = 120
+#x1 = -47.317405
+#y1 = -23.092909
+#x2 = -45.604801
+#y2 = -24.173077
+#dx = 0.009957
+#dy = -0.0090014
+
 input_list = sys.argv[1]
 threshold = float(sys.argv[2])
 
 df = rd.Data(x1, y1, x2, y2, dx, dy, nx, ny)
 df.import_bin_from_list(input_list)
-matrix = df.get_pearson_correlation()
+#matrix = df.get_pearson_correlation()
+matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
 
-g = graph.Graph(matrix, threshold, df.xlist, df.ylist)
-g.get_degree()
-g.get_strength()
-g.get_closeness()
-g.get_betweenness()
-g.get_clustering_coefficient()
-g.get_shortest_path_mean()
+stats = Stats()
+#stats.pearson_significance_test(df.time_series)
+#stats.shuffle(df.time_series, matrix, 100)
+#stats.ttest(len(df.time_series), 0.86, 0.05)
 
-avg_cluster = g.get_average_clustering()
-avg_degree = g.get_average_degree()
-diameter = g.get_diameter()
-shortpath_mean = g.get_average_shortest_path_mean()
+#dists = df.get_euclidean_distances()
+#df.get_neighbours()
+
+g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
+
+plt = out.Plots(g)
+
+graph.Graph.calculate_vertices_metrics(g)
+g.vs["shortestPathMean"] = graph.Graph.get_shortest_path_mean(g)
+#g.write_graphml('GT.GraphML')
+topol_dists = np.array(g.shortest_paths())
+avg_cluster = graph.Graph.get_average_clustering(g)
+avg_degree = graph.Graph.get_average_degree(g)
+diameter = g.diameter(directed=False)
+shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
+#graph.Graph.get_manhattan_shortest_paths(g)
+
+"""
+print("Regression T-Test:")
+idxs = np.triu_indices(dists.shape[0], k=1)
+x = dists[idxs].flatten()
+y1 = topol_dists[idxs].flatten()
+idx = np.isfinite(y1)
+x1 = x[idx]
+y1 = y1[idx]
+reject, pvalues, b, slope = stats.ttest_regression(x1, y1)
+print("reject = "+str(reject)+" p-value = "+str(pvalues))
+"""
 
 #g.plot("grafo.svg")
 
-out.Shapefile(g.graph,"grafo_"+str(threshold)).create_shape("", dx, dy)
+out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
+#out_csv = out.TextFiles(g)
+#out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
+#out_csv.create_vertex_metrics_csv("vertex_metrics.csv")
+#out_csv.create_adjacency_list("adjacency_list.csv")
 
-global_file = out.TextFiles(g, "graph_TamanduateiClip_correlation_10032019.csv")
-global_file.create_csv(threshold)
+plt = out.Plots(g)
+#plt.plot_shortpath_histogram()
+#plt.plot_correlation_histogram(matrix, threshold=0.86)
 
-plt = out.Plots(g.graph)
-plt.plot_degree_histogram()
-#plt.plot_correlation_histogram(matrix)
+#plt.plot_correlation_x_distance(dists, matrix, title='Correlation X Euclidean Distance',
+#                                yax='Temporal Correlation',
+#                                xax='Geographical Distance between pairs of points (km)')
+#plt.plot_grouped_correlation_x_distance(dists, matrix, title='Correlation X Geographical Distance',
+#                                        yax='Temporal correlation',
+#                                        xax='Geographical distance between pairs of points [km]')
+#plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
+#plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')

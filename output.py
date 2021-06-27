@@ -1,10 +1,8 @@
-from scipy.stats import gaussian_kde
 from osgeo import ogr
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-from skgstat import Variogram
 import scipy
 import sys
 
@@ -543,7 +541,3 @@ class Plots:
         plt.xscale('log')
         plt.yscale('log')
         plt.show()
-
-    def spatial_variogram(self, coords, values):
-        V = Variogram(coords, values)
-        V.plot()

@@ -5,45 +5,40 @@ import graph
 from calc import Stats
 import output as out
 import numpy as np
+import configparser
 
-# Recorte Bacia Tamanduatei (PPI)
-nx = 36
-ny = 37
-dx = 0.00747135
-dy = -0.00675451
-x1 = -46.665909175
-y1 = -23.509574965000002
+# Receive args
+config_file = sys.argv[1]
+input_list = sys.argv[2]
+threshold = float(sys.argv[3])
+threshold_type = sys.argv[4]    # p - percentile / t - threshold value
+
+# Read config file
+config = configparser.ConfigParser()
+config.read(config_file)
+out_dir = config['PATH']['OUTPUT']
+nx = int(config['GEO']['NX'])
+ny = int(config['GEO']['NY'])
+dx = float(config['GEO']['DX'])
+dy = float(config['GEO']['DY'])
+x1 = float(config['GEO']['X1'])
+y1 = float(config['GEO']['Y1'])
 x2 = x1 + nx*dx
 y2 = y1 + ny*dy
+dbz_min = float(config['PARAM']['DBZ_MIN'])
+dt_pos_ini = int(config['PARAM']['dt_pos_ini'])
+dt_pos_fim = int(config['PARAM']['dt_pos_fim'])
+dt_format = config['PARAM']['dt_format']
 
-# Recorte Bacia Tamanduatei (CAPPI)
-#dx = 0.009957
-#dy = -0.0090014
-#nx = 27
-#ny = 29
-#x1 = -46.6608
-#y1 = -23.514
-#x2 = x1 + nx*dx
-#y2 = y1 + ny*dy
-
-# RMSP + 10km
-#nx = 172
-#ny = 120
-#x1 = -47.317405
-#y1 = -23.092909
-#x2 = -45.604801
-#y2 = -24.173077
-#dx = 0.009957
-#dy = -0.0090014
-
-input_list = sys.argv[1]
-threshold = float(sys.argv[2])
-
+# Read data
 df = rd.Data(x1, y1, x2, y2, dx, dy, nx, ny)
-df.import_bin_from_list(input_list)
+df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
+
+# Data Correlation
 #matrix = df.get_pearson_correlation()
 matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
 
+# Stats
 stats = Stats()
 #stats.pearson_significance_test(df.time_series)
 #stats.shuffle(df.time_series, matrix, 100)
@@ -52,10 +47,13 @@ stats = Stats()
 #dists = df.get_euclidean_distances()
 #df.get_neighbours()
 
+# Graph construction
+if threshold_type == 'p':
+    percentile = threshold
+    threshold = df.get_threshold_from_percentile(matrix, percentile)
 g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
 
-plt = out.Plots(g)
-
+# Network metrics
 graph.Graph.calculate_vertices_metrics(g)
 g.vs["shortestPathMean"] = graph.Graph.get_shortest_path_mean(g)
 #g.write_graphml('GT.GraphML')

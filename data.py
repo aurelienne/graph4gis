@@ -1,10 +1,9 @@
 import pandas as pd
-import numpy as np
 import os
 from datetime import datetime, timedelta
 import scipy
-import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Data:
@@ -25,11 +24,9 @@ class Data:
         self.nx = len(self.xlist)
         self.ny = len(self.ylist)
 
-
-    def import_bin_from_list(self, input_list):
+    def import_bin_from_list(self, input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format):
         f = open(input_list, 'r')
         files = f.readlines()
-
         i = 0
         date_list = []
         data_list = []
@@ -37,11 +34,10 @@ class Data:
         print(len(self.ylist))
         for filename in files:
             basename = os.path.basename(filename.strip())
-            file_datetime = datetime.strptime(basename[-16:-4], "%Y%m%d%H%M")
+            file_datetime = datetime.strptime(basename[dt_pos_ini:dt_pos_fim], dt_format)
             date_list.append(file_datetime)
-
             data = np.fromfile(filename.strip(), dtype=np.float32)
-            data[data<35] = 0
+            data[data < dbz_min] = 0
             if i == 0:
                 self.remove_nodata_points(data, nodata=255)
                 i = i + 1
@@ -55,13 +51,11 @@ class Data:
         index = pd.DatetimeIndex(date_list)
         self.time_series = pd.Series(data_list, index=index)
 
-
     def remove_nodata_points(self, data, nodata):
         # Remove nodata cells
         nodata_idx = np.argwhere(data==nodata)
         self.xlist = np.delete(self.xlist, nodata_idx)
         self.ylist = np.delete(self.ylist, nodata_idx)
-
 
     def remove_zerostd_points(self, data_list):
         data = np.array(data_list).transpose()
@@ -76,7 +70,6 @@ class Data:
         return_data = (filtered_data.transpose()).tolist()
         return return_data
 
-
     def remove_lowavg_points(self, data_list):
         data = np.array(data_list).transpose()
         idxs = []
@@ -90,14 +83,12 @@ class Data:
         return_data = (filtered_data.transpose()).tolist()
         return return_data
 
-
     def get_pearson_correlation(self):
         values = self.time_series.values
         val_array = np.array(values.tolist()).transpose()
-        corr_matrix = np.corrcoef(val_array, rowvar=True, dtype=np.float16)
+        corr_matrix = np.corrcoef(val_array, rowvar=True)
         #nan_idx = np.argwhere(np.isnan(corr_matrix[:]))
         return corr_matrix
-
 
     def get_pearson_correlation_timedelay(self, max_delay):
         values = self.time_series.values
@@ -122,7 +113,9 @@ class Data:
                     corr_matrix[x, y, t] = corr_value
                     p_values[x, y, t] = p_value
 
-        plt.boxplot(corr_matrix[:, :, 0], corr_matrix[:, :, 1], corr_matrix[:, :, 2])
+        plt.boxplot([corr_matrix[:, :, 0].flatten(), p_values[:, :, 0].flatten(),
+                     corr_matrix[:, :, 1].flatten(), p_values[:, :, 1].flatten(),
+                     corr_matrix[:, :, 2].flatten(), p_values[:, :, 2].flatten()])
         plt.show()
         return corr_matrix
 
@@ -139,7 +132,6 @@ class Data:
                 point2 = np.array((self.xlist[j], self.ylist[j]))
                 dists[i, j] = np.linalg.norm(point1 - point2) * 111
         return dists
-
 
     def get_neighbours(self, radius=1):
         f = open("neighbours.csv", "w")

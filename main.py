@@ -36,7 +36,7 @@ df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
 
 # Data Correlation
 #matrix = df.get_pearson_correlation()
-matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
+matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=30))
 
 # Stats
 stats = Stats()
@@ -79,9 +79,9 @@ print("reject = "+str(reject)+" p-value = "+str(pvalues))
 #g.plot("grafo.svg")
 
 out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
-#out_csv = out.TextFiles(g)
-#out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
-#out_csv.create_vertex_metrics_csv("vertex_metrics.csv")
+out_csv = out.TextFiles(g)
+out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
+out_csv.create_vertex_metrics_csv("vertex_metrics.csv")
 #out_csv.create_adjacency_list("adjacency_list.csv")
 
 plt = out.Plots(g)

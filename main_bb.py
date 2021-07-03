@@ -11,6 +11,7 @@ config_file = sys.argv[1]
 input_list = sys.argv[2]
 threshold = float(sys.argv[3])
 threshold_type = sys.argv[4]    # p - percentile / t - threshold value
+id_network = sys.argv[5]
 
 # Read config file
 config = configparser.ConfigParser()
@@ -25,8 +26,8 @@ y1 = float(config['GEO']['Y1'])
 x2 = x1 + nx*dx
 y2 = y1 + ny*dy
 dbz_min = float(config['PARAM']['DBZ_MIN'])
-dt_pos_ini = config['PARAM']['dt_pos_ini']
-dt_pos_fim = config['PARAM']['dt_pos_fim']
+dt_pos_ini = int(config['PARAM']['dt_pos_ini'])
+dt_pos_fim = int(config['PARAM']['dt_pos_fim'])
 dt_format = config['PARAM']['dt_format']
 
 df = rd.Data(x1, y1, x2, y2, dx, dy, nx, ny)
@@ -46,22 +47,18 @@ if threshold_type == 'p':
     threshold = df.get_threshold_from_percentile(matrix, percentile)
 g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
 graph.Graph.calculate_vertices_metrics(g)
-
 g.vs["shortestPathMean"] = graph.Graph.get_shortest_path_mean(g)
-g.write_graphml('GT.GraphML')
 topol_dists = np.array(g.shortest_paths())
 avg_cluster = graph.Graph.get_average_clustering(g)
 avg_degree = graph.Graph.get_average_degree(g)
 diameter = g.diameter(directed=False)
 shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
-mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
+#mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
 
 # Backbone
 g_backbone = graph.Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
-#g_backbone.write_graphml('Original.GraphML')
 g_backbone = stats.test_backbone(g_backbone, len(g.es), matrix)
 g_backbone = graph.Graph.calculate_vertices_metrics(g_backbone)
-#g_backbone.write_graphml('BB.GraphML')
 #clusters = g.clusters() # get connected components
 bkb_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_backbone)
 bkb_avg_cluster_coef = g_backbone.transitivity_avglocal_undirected()
@@ -70,7 +67,11 @@ out.Shapefile(g_backbone, "backbone_"+str(threshold)).create_shape("", dx, dy)
 print("\nbackbone:")
 print(bkb_avg_shortest_path, bkb_avg_cluster_coef, bkb_diameter, min(g_backbone.es['weight']), max(g_backbone.es['weight']))
 bkb_topol_dists = np.array(g_backbone.shortest_paths())
-mdists_bb = graph.Graph.get_manhattan_shortest_paths(g_backbone)
+#mdists_bb = graph.Graph.get_manhattan_shortest_paths(g_backbone)
+
+# Mutual Information (Iuri)
+g_mi = graph.Graph.from_graphml('/dados/redes/Iuri/GraphML_MI/g_graph_1270_MI.GraphML')
+print(g_mi.es['weight'])
 
 # Random networks (rewired)
 #avgshortpath_samples, avgcluster_samples, diameter_samples, avg_rand_graph_corr = stats.rewired_graph(g, 10, matrix, dists)
@@ -78,28 +79,31 @@ mdists_bb = graph.Graph.get_manhattan_shortest_paths(g_backbone)
 #print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min(avg_rand_graph_corr), max(avg_rand_graph_corr))
 
 # Random network (Networkx Configuration Model) - GT
-#avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-#max_rand_graph_corr = graph.Graph.randomize_graph(g.degree(), matrix, samples=30)
-#print("Rede Aleatoria - Based on GT:")
-#print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
-#      np.max(avg_rand_graph_corr))
-#idxs = np.triu_indices(matrix.shape[0], k=1)
-#corr_matrix = matrix[idxs]
-#out.Plots.plot_correlation_histogram2(corr_matrix, avg_rand_graph_corr, 0.86, "GT-network", "steelblue")
+avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
+max_rand_graph_corr = graph.Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=1)
+print("Rede Aleatoria - Based on GT:")
+print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
+      np.max(avg_rand_graph_corr))
+idxs = np.triu_indices(matrix.shape[0], k=1)
+corr_matrix = matrix[idxs]
+out.Plots.plot_correlation_histogram2(corr_matrix, avg_rand_graph_corr, 0.86, "GT-network", "steelblue")
+
 
 # Random network (Networkx Configuration Model) - BB
-#avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-#max_rand_graph_corr = graph.Graph.randomize_graph(g_backbone.degree(), matrix, samples=30)
-#print("Rede Aleatoria - Based on GT:")
-#print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
-#      np.max(avg_rand_graph_corr))
+avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
+max_rand_graph_corr = graph.Graph.randomize_graph(g_backbone.degree(), matrix, len(g_backbone.es), samples=10000)
+print("Rede Aleatoria - Based on BB:")
+print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
+      np.max(avg_rand_graph_corr))
+out.Plots.plot_correlation_histogram2(np.array(g_backbone.es['weight']), avg_rand_graph_corr, 0, "BB-network", "green")
 
 # Random network (Networkx Configuration Model) - MI
-#avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-#max_rand_graph_corr = graph.Graph.randomize_graph(g.degree(), matrix, samples=30)
-#print("Rede Aleatoria - Based on GT:")
-#print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
-#      np.max(avg_rand_graph_corr))
+avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
+max_rand_graph_corr = graph.Graph.randomize_graph(g_mi.degree(), matrix, len(g_mi.es), samples=10000)
+print("Rede Aleatoria - Based on MI:")
+print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
+      np.max(avg_rand_graph_corr))
+out.Plots.plot_correlation_histogram2(np.array(g_mi.es['weight']), avg_rand_graph_corr, 0, "MI-network", "orange")
 
 
 #plt = out.Plots(g)
@@ -134,7 +138,7 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 
 #g.plot("grafo.svg")
 
-#out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
+out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
 #out_csv = out.TextFiles(g)
 #out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
 #out_csv.create_vertex_metrics_csv("vertex_metrics.csv")
@@ -145,7 +149,7 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #out.Plots.plot_degree_distribution(g, g_backbone)
 #plt.plot_shortpath_histogram()
 #plt.plot_correlation_histogram(matrix, threshold=0.86)
-#out.Plots.plot_correlation_histogram2(matrix, np.array(g_backbone.es['weight']), avg_rand_graph_corr, threshold=0.86)
+
 
 #plt.plot_correlation_x_distance(dists, matrix, title='Correlation X Euclidean Distance',
 #                                yax='Temporal Correlation',
@@ -155,6 +159,7 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #                                        xax='Geographical distance between pairs of points [km]')
 #plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
 #plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
-out.Plots.plot_distance_x_distance2(dists, dists, topol_dists, bkb_topol_dists)
+#out.Plots.plot_distance_x_distance2(dists, dists, mdists_gt, mdists_bb)
 #out.Plots.clustering_x_degree(g_backbone.vs['degree'], g_backbone.vs['clusterCoeficient'])
-#out.Plots.plot_distance_x_distance2(mdists_gt, mdists_bb, topol_dists, bkb_topol_dists)
+
+#out.Plots.plot_distance_x_distance2(topol_dists, bkb_topol_dists, mdists_gt, mdists_bb)

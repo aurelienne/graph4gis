@@ -186,10 +186,6 @@ class Stats:
 
         return avgshortpath_samples, avgcluster_samples, diameter_samples, avg_weights
 
-    def random_graph(self, degree_list):
-        rg_netx = networkx.generators.degree_seq.configuration_model(degree_list)
-
-
     def backbone(g, alpha):
         # Implementação do Iuri Diniz (UFOP)
         print("Starting backbone - "+str(datetime.datetime.now()))

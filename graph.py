@@ -2,9 +2,14 @@ import igraph
 import numpy as np
 import networkx
 import output as out
+import calc
 import matplotlib.pyplot as plt
 
 class Graph:
+
+    def from_graphml(gml):
+        graph = igraph.Graph.Read_GraphML(gml)
+        return graph
 
     def from_correlation_matrix(matrix, threshold, xlist, ylist):
         matrix = np.nan_to_num(matrix)
@@ -15,11 +20,11 @@ class Graph:
         graph.vs["y"] = ylist
         return graph
 
-    def randomize_graph(degree_list, matrix, samples):
+    def randomize_graph(degree_list, matrix, num_edges, samples):
         avgcluster_samples, avgshortpath_samples, diameter_samples = [], [], []
         avg_min_weight = 0
         avg_max_weight = 0
-        avg_weights = np.zeros(1270)
+        avg_weights = np.zeros(num_edges)
         for i in range(samples):
             rg_nx = networkx.generators.degree_seq.configuration_model(degree_list)
             rg = igraph.Graph(directed=False)
@@ -34,17 +39,14 @@ class Graph:
             max_weight = np.max(np.array(weights))
             avg_min_weight = avg_min_weight + min_weight
             avg_max_weight = avg_max_weight + max_weight
-            avg_weights = avg_weights + np.array(weights)
-            #plt.hist(weights, bins=20)
-            #plt.show()
-
+            avg_weights = np.array(sorted(weights)) + avg_weights
             avgcluster_samples.append(rg.transitivity_avglocal_undirected())
             avgshortpath_samples.append(Graph.get_average_shortest_path_mean(rg))
             diameter_samples.append(rg.diameter(directed=False))
 
+        avg_weights = avg_weights / samples
         avg_min_weight = avg_min_weight / samples
         avg_max_weight = avg_max_weight / samples
-        avg_weights = avg_weights / samples
         return avgcluster_samples, avgshortpath_samples, diameter_samples, avg_weights, avg_min_weight, avg_max_weight
 
     def plot(filename, g):
@@ -154,4 +156,5 @@ class Graph:
                     point1 = point2
                 if vj is not None:
                     mdists[vi, vj] = p_dist
+
         return mdists

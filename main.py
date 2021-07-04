@@ -6,17 +6,20 @@ from calc import Stats
 import output as out
 import numpy as np
 import configparser
+import os
 
 # Receive args
 config_file = sys.argv[1]
 input_list = sys.argv[2]
 threshold = float(sys.argv[3])
 threshold_type = sys.argv[4]    # p - percentile / t - threshold value
+id_network = sys.argv[5]
 
 # Read config file
 config = configparser.ConfigParser()
 config.read(config_file)
 out_dir = config['PATH']['OUTPUT']
+out_dir = os.path.join(out_dir, id_network)
 nx = int(config['GEO']['NX'])
 ny = int(config['GEO']['NY'])
 dx = float(config['GEO']['DX'])
@@ -78,11 +81,13 @@ print("reject = "+str(reject)+" p-value = "+str(pvalues))
 
 #g.plot("grafo.svg")
 
-out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
-out_csv = out.TextFiles(g)
-out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
-out_csv.create_vertex_metrics_csv("vertex_metrics.csv")
-#out_csv.create_adjacency_list("adjacency_list.csv")
+shp_filename = os.path.join(out_dir, "grafo_" + str(threshold))
+out.Shapefile(g, shp_filename).create_shape("", dx, dy)
+#out_csv = out.TextFiles(g)
+#out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"),
+# avg_degree, avg_cluster, diameter, shortpath_mean)
+#out_csv.create_vertex_metrics_csv(os.path.join(out_dir, "vertex_metrics.csv"))
+#out_csv.create_adjacency_list(os.path.join(out_dir, "adjacency_list.csv"))
 
 plt = out.Plots(g)
 #plt.plot_shortpath_histogram()

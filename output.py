@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 import scipy
+import calc
 import sys
 
 class Shapefile:
@@ -321,8 +322,8 @@ class Plots:
                       weights=np.zeros_like(rand_corr) + 1. / rand_corr.size,
                       bins=np.arange(min(rand_corr), max(rand_corr) + binwidth, binwidth))
         plt.grid(axis='y', alpha=0.75)
-        plt.axvline(threshold, label='Global Threshold = '+str(threshold)+'\n('+str(np.around(percentile, 2))
-                                     + ' Percentile)', color="red")
+        #plt.axvline(threshold, label='Global Threshold = '+str(threshold)+'\n('+str(np.around(percentile, 2))
+        #                             + ' Percentile)', color="red")
         plt.xlabel('Correlation')
         plt.ylabel('Relative Frequency')
         plt.legend(fontsize='medium')
@@ -409,24 +410,27 @@ class Plots:
         y1 = topol_dist[idxs].flatten()
         y2 = bkb_topol_dist[idxs].flatten()
         #y2 = bkb_topol_dist.flatten()
-        idx = np.isfinite(y1)
-        x1 = x1[idx]
-        y1 = y1[idx]
-        idx = np.isfinite(y2)
-        x2 = x2[idx]
-        y2 = y2[idx]
+        idx = np.argwhere((y1>0) & (np.isfinite(y1)))
+        x1 = x1[idx].flatten()
+        y1 = y1[idx].flatten()
+        idx = np.argwhere((y2>0) & (np.isfinite(y2)))
+        x2 = x2[idx].flatten()
+        y2 = y2[idx].flatten()
         #x2 = x[0:len(y2)]
-        idx_dist1 = np.where(y1==1)
-        idx_dist2 = np.where(y2==1)
-        geo1 = x1[idx_dist1]
-        geo2 = x2[idx_dist2]
-        print(np.mean(geo1), np.max(geo1))
-        print(np.mean(geo2), np.max(geo2))
+        """
+        #idx_dist1 = np.where(y1==1)
+        #idx_dist2 = np.where(y2==1)
+        #geo1 = x1[idx_dist1]
+        #geo2 = x2[idx_dist2]
+        #print(np.mean(geo1), np.max(geo1))
+        #print(np.mean(geo2), np.max(geo2))
+        """
+        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color='steelblue', marker='.', label='GT-network')
         plt.scatter(x2, y2, s=20, edgecolor=None, alpha=0.5, color='limegreen', marker='s', label='BB-network')
-        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color='steelblue', marker='.', label='99P-network')
         plt.grid(axis='y', alpha=0.75)
         plt.xlabel('Geographical Distance [km]')
-        plt.ylabel('Topological Distance [number of edges]')
+        #plt.ylabel('Topological Distance [number of edges]')
+        plt.ylabel('Manhattan Distance')
         #plt.title('Geographical Distance X Topological Distance')
         m, b = np.polyfit(x1, y1, 1)
         m2, b2 = np.polyfit(x2, y2, 1)
@@ -434,6 +438,12 @@ class Plots:
         rb = np.corrcoef(x2, y2)[0, 1]
         r2 = '{:6.3f}'.format(r * r)
         rb2 = '{:6.3f}'.format(rb * rb)
+
+        p_value_gt = calc.Stats().ttest_regression(x1, y1)
+        p_value_bb = calc.Stats().ttest_regression(x2, y2)
+        print("p-value - GT: " + str(p_value_gt))
+        print("p-value - BB: " + str(p_value_bb))
+        print("")
         print("R2:")
         print(r2, rb2)
 

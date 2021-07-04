@@ -12,7 +12,7 @@ import os
 config_file = sys.argv[1]
 input_list = sys.argv[2]
 threshold = float(sys.argv[3])
-threshold_type = sys.argv[4]    # p - percentile / t - threshold value
+threshold_type = sys.argv[4]    # p - percentile / t - threshold value / md - max diameter threshold
 id_network = sys.argv[5]
 
 # Read config file
@@ -38,8 +38,8 @@ df = rd.Data(x1, y1, x2, y2, dx, dy, nx, ny)
 df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
 
 # Data Correlation
-#matrix = df.get_pearson_correlation()
-matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=30))
+matrix = df.get_pearson_correlation()
+#matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
 
 # Stats
 stats = Stats()
@@ -54,18 +54,20 @@ stats = Stats()
 if threshold_type == 'p':
     percentile = threshold
     threshold = df.get_threshold_from_percentile(matrix, percentile)
+elif threshold_type == 'md':
+    g = graph.Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
+    threshold = graph.Graph.max_diameter_threshold(g)
+    print(threshold)
+
 g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
+#g.write_graphml('GT.GraphML')
 
 # Network metrics
 graph.Graph.calculate_vertices_metrics(g)
 g.vs["shortestPathMean"] = graph.Graph.get_shortest_path_mean(g)
-#g.write_graphml('GT.GraphML')
 topol_dists = np.array(g.shortest_paths())
-avg_cluster = graph.Graph.get_average_clustering(g)
-avg_degree = graph.Graph.get_average_degree(g)
-diameter = g.diameter(directed=False)
-shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
 #graph.Graph.get_manhattan_shortest_paths(g)
+
 
 """
 print("Regression T-Test:")
@@ -81,15 +83,14 @@ print("reject = "+str(reject)+" p-value = "+str(pvalues))
 
 #g.plot("grafo.svg")
 
-shp_filename = os.path.join(out_dir, "grafo_" + str(threshold))
-out.Shapefile(g, shp_filename).create_shape("", dx, dy)
-#out_csv = out.TextFiles(g)
-#out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"),
-# avg_degree, avg_cluster, diameter, shortpath_mean)
+#shp_filename = "grafo_" + "{:3.2f}".format(threshold)
+#out.Shapefile(g, shp_filename).create_shape(out_dir, dx, dy)
+out_csv = out.TextFiles(g)
+out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"))
 #out_csv.create_vertex_metrics_csv(os.path.join(out_dir, "vertex_metrics.csv"))
 #out_csv.create_adjacency_list(os.path.join(out_dir, "adjacency_list.csv"))
 
-plt = out.Plots(g)
+#plt = out.Plots(g)
 #plt.plot_shortpath_histogram()
 #plt.plot_correlation_histogram(matrix, threshold=0.86)
 

@@ -152,9 +152,9 @@ class Stats:
             #am = new_graph.get_adjacency()
             #am_list.append(am)
             new_graph = graph.Graph.calculate_vertices_metrics(new_graph)
-            if i <= 10:
-                out.Shapefile(new_graph, "rewired_" + str(i)).create_shape("")
-                #out.Plots(new_graph).plot_distance_x_distance(eucl_dists, np.array(new_graph.shortest_paths()))
+            #if i <= 10:
+            #    out.Shapefile(new_graph, "rewired_" + str(i)).create_shape("")
+            #    #out.Plots(new_graph).plot_distance_x_distance(eucl_dists, np.array(new_graph.shortest_paths()))
             avg_weights = avg_weights + np.array(weights)
 
             idxs = np.triu_indices(eucl_dists.shape[0], k=1)

@@ -1,3 +1,4 @@
+import graph
 from osgeo import ogr
 import matplotlib.pyplot as plt
 import numpy as np
@@ -195,8 +196,6 @@ class Shapefile:
         ogr.GetDriverByName("ESRI Shapefile").CopyDataSource(in_ds, path+"/"+self.filename+"_polygons.shp")
 
     def	create_shape(self, path, dx=None, dy=None):
-        current_path 	=	os.getcwd()
-        path			=	current_path+path[1:]
         self.create_lines(path, dx, dy, center=True)
         self.create_points(path, dx, dy, center=True)
         if dx != None and dy != None:
@@ -207,10 +206,23 @@ class TextFiles:
     def __init__(self, g):
         self.g = g
 
-    def create_global_metrics_csv(self, threshold, filename, avg_degree, avg_cluster, diameter, shortpath_mean):
+    def create_global_metrics_csv(self, threshold, filename):
+        num_vertices = self.g.vcount()
+        num_edges = self.g.ecount()
+        avg_cluster = graph.Graph.get_average_clustering(self.g)
+        avg_degree = graph.Graph.get_average_degree(self.g)
+        diameter = self.g.diameter(directed=False)
+        shortpath_mean = graph.Graph.get_average_shortest_path_mean(self.g)
+        avg_betweeness = graph.Graph.get_average_betweenness(self.g)
+        num_components, giant_component_v, giant_component_e, singletons = graph.Graph.get_components_stats(self.g)
+
         f = open(filename, "a")
-        f.write("threshold, avg_cluster_coef, avg_degree, diameter, shortpath_mean\n")
-        f.write("%s, %s, %s, %s, %s\n" % (threshold, avg_cluster, avg_degree, diameter, shortpath_mean))
+        f.write("threshold, vertices, edges, cluster_coef, avg_degree, diameter, shortpath_mean, avg_betweeness, "
+                "num_components, giant_component_v, giant_component_e, singletons\n")
+        f.write("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s\n" % (threshold, num_vertices, num_edges, avg_cluster,
+                                                                      avg_degree, diameter, shortpath_mean,
+                                                                      avg_betweeness, num_components, giant_component_v,
+                                                                      giant_component_e, singletons))
         f.close()
 
     def create_vertex_metrics_csv(self, filename):

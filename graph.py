@@ -121,10 +121,27 @@ class Graph:
 
         return betweenness
 
+    def get_average_betweenness(g):
+        avg_betweenness = np.mean(g.betweenness())
+
+        return avg_betweenness
+
     def get_clustering_coefficient(g):
         cc = g.transitivity_local_undirected()
 
         return cc
+
+    def get_components_stats(g):
+        clusters = g.clusters()  # get connected components
+        num_components = len(clusters)
+        giant_component_v = clusters.giant().vcount()
+        giant_component_e = clusters.giant().ecount()
+        singletons = 0
+        for cluster in clusters:
+            if len(cluster) == 1:
+                singletons = singletons + 1
+
+        return num_components, giant_component_v, giant_component_e, singletons
 
     def calculate_vertices_metrics(g):
         g.vs["weightedDegree"] = Graph.get_strength(g)
@@ -158,3 +175,29 @@ class Graph:
                     mdists[vi, vj] = p_dist
 
         return mdists
+
+    # Aim: Remove links whose weights are below a certain threshold
+    # Input: g, w_threshold
+    # Output: g
+    def remove_edges(g, w_threshold):
+        del_edges = []
+        for e in g.es():
+            if e['weight'] < w_threshold:
+                del_edges.append(e)
+        g.delete_edges(del_edges)
+        return g
+
+    def max_diameter_threshold(g):
+        max_threshold = max(g.es['weight'])
+        max_diameter = 0
+        for threshold in np.arange(0.50, max_threshold, 0.01):
+            # print(threshold)
+            ng = g.copy()
+            ng = Graph.remove_edges(ng, threshold)
+            # print(ng)
+            diameter = ng.diameter(directed=False)
+            # print(diameter)
+            if diameter > max_diameter:
+                max_diameter = diameter
+                threshold_max_diameter = threshold
+        return threshold_max_diameter

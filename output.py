@@ -325,14 +325,21 @@ class Plots:
 
     def plot_correlation_histogram2(corr, rand_corr, threshold, label1, color1):
         binwidth = 0.01
+        bins_h1 = np.arange(0, 1+binwidth, binwidth)
         netwk_corr = corr[corr >= threshold]
+        print(netwk_corr[netwk_corr>=0.99])
         percentile = scipy.stats.percentileofscore(corr, threshold)
-        h1 = plt.hist(netwk_corr, alpha=0.5, rwidth=0.85, color=color1, label=label1,
+        h1 = plt.hist(netwk_corr, alpha=0.5, rwidth=1, color=color1, label=label1,
                  weights=np.zeros_like(netwk_corr) + 1. / netwk_corr.size,
-                 bins=np.arange(min(netwk_corr), max(netwk_corr) + binwidth, binwidth))
-        h2 = plt.hist(rand_corr, alpha=0.5, rwidth=0.85, color='grey', label="RC-networks (average)",
-                      weights=np.zeros_like(rand_corr) + 1. / rand_corr.size,
-                      bins=np.arange(min(rand_corr), max(rand_corr) + binwidth, binwidth))
+                 bins=bins_h1)
+                 #bins=np.arange(min(netwk_corr), max(netwk_corr) + binwidth, binwidth))
+
+        bins_h2 = rand_corr[0]
+        h2_relfreq = rand_corr[1]
+        h2 = plt.bar(bins_h2, h2_relfreq, width=rand_corr[0][1]-rand_corr[0][0], alpha=0.5, color='grey',
+                     label="RC-networks (average)", align='edge')
+                     #weights=np.zeros_like(rand_corr) + 1. / rand_corr[1].size,
+                     #bins=rand_corr[0])
         plt.grid(axis='y', alpha=0.75)
         #plt.axvline(threshold, label='Global Threshold = '+str(threshold)+'\n('+str(np.around(percentile, 2))
         #                             + ' Percentile)', color="red")
@@ -341,26 +348,27 @@ class Plots:
         plt.legend(fontsize='medium')
         plt.show()
 
-    def plot_correlation_histogram3(corr_matrix, bkb_corr, rand_corr, threshold):
-        n = corr_matrix.shape[0]
-        idxs = np.triu_indices(corr_matrix.shape[0], k=1)
-        percentile = scipy.stats.percentileofscore(corr_matrix[idxs], threshold)
-        corr_matrix = corr_matrix[idxs]
+    def plot_correlation_histogram3(corr_matrix, bkb_corr, rand_corr, threshold, label1, color1, xlabel):
+        percentile = scipy.stats.percentileofscore(corr_matrix, threshold)
         netwk_corr = corr_matrix[corr_matrix >= threshold]
         binwidth = 0.01
-        h1 = plt.hist(bkb_corr, alpha=0.5, rwidth=0.85, color='green', label="BB-network",
+        bins_h3 = rand_corr[0]
+        h3_relfreq = rand_corr[1]
+        h1 = plt.hist(bkb_corr, alpha=0.5, rwidth=1, color='green', label="BB-network",
                  weights=np.zeros_like(bkb_corr) + 1. / bkb_corr.size,
                  bins=np.arange(min(bkb_corr), max(bkb_corr) + binwidth, binwidth))
-        h2 = plt.hist(rand_corr, alpha=0.5, rwidth=0.85, color='grey', label="RC-networks (average)",
-                 weights=np.zeros_like(rand_corr) + 1. / rand_corr.size,
-                 bins=np.arange(min(rand_corr), max(rand_corr) + binwidth, binwidth))
-        h3 = plt.hist(netwk_corr, alpha=0.5, rwidth=0.85, label="GT-network",
-                 weights=np.zeros_like(netwk_corr) + 1. / netwk_corr.size,
-                 bins=np.arange(min(netwk_corr), max(netwk_corr) + binwidth, binwidth))
+        h2 = plt.hist(netwk_corr, alpha=0.5, rwidth=1, label="GT-network",
+                      weights=np.zeros_like(netwk_corr) + 1. / netwk_corr.size,
+                      bins=np.arange(min(netwk_corr), max(netwk_corr) + binwidth, binwidth))
+        #h3 = plt.hist(rand_corr, alpha=0.5, rwidth=0.85, color='grey', label="RC-networks (average)",
+        #         weights=np.zeros_like(rand_corr) + 1. / rand_corr.size,
+        #         bins=np.arange(min(rand_corr), max(rand_corr) + binwidth, binwidth))
+        h3 = plt.bar(bins_h3, h3_relfreq, width=rand_corr[0][1] - rand_corr[0][0], alpha=0.5, color='grey',
+                     label="RC-networks (average)", align='edge')
         plt.grid(axis='y', alpha=0.75)
         plt.axvline(threshold, label='Global Threshold = '+str(threshold)+'\n('+str(np.around(percentile, 2))
                                      + ' Percentile)', color="red")
-        plt.xlabel('Correlation')
+        plt.xlabel(xlabel)
         plt.ylabel('Relative Frequency')
         #plt.title('Correlation Histogram')
         plt.legend(fontsize='medium')

@@ -127,6 +127,16 @@ class Stats:
 
         return reject, pvalue, b, m
 
+    def test_greater_distribution(self, d1, d2):
+        x, y = stats.mannwhitneyu(d1, d2, alternative='two-sided')
+        print("The statistics: ", x)
+        print("The p-value", y)
+        #if y <= 0.05:
+        #    print(
+        #        "Reject the null hypothesis, that the probability of X being greater than Y is equal to the probability of Y being greater than X")
+        #else:
+        #    print("The null hypothesis cannot be rejected")
+
     def rewired_graph(self, g, samples, corr_matrix, eucl_dists):
         am_list = []
         am = g.get_adjacency()

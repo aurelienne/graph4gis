@@ -348,23 +348,24 @@ class Plots:
         plt.legend(fontsize='medium')
         plt.show()
 
-    def plot_correlation_histogram3(corr_matrix, bkb_corr, rand_corr, threshold, label1, color1, xlabel):
+    def plot_correlation_histogram3(corr_matrix, bkb_corr, rand_corr, threshold, label1, color1, label2, color2, label3,
+                                    color3, xlabel):
         percentile = scipy.stats.percentileofscore(corr_matrix, threshold)
         netwk_corr = corr_matrix[corr_matrix >= threshold]
         binwidth = 0.01
         bins_h3 = rand_corr[0]
         h3_relfreq = rand_corr[1]
-        h1 = plt.hist(bkb_corr, alpha=0.5, rwidth=1, color='green', label="BB-network",
-                 weights=np.zeros_like(bkb_corr) + 1. / bkb_corr.size,
-                 bins=np.arange(min(bkb_corr), max(bkb_corr) + binwidth, binwidth))
-        h2 = plt.hist(netwk_corr, alpha=0.5, rwidth=1, label="GT-network",
+        h1 = plt.hist(netwk_corr, alpha=0.5, rwidth=1, color=color1, label=label1,
                       weights=np.zeros_like(netwk_corr) + 1. / netwk_corr.size,
                       bins=np.arange(min(netwk_corr), max(netwk_corr) + binwidth, binwidth))
+        h2 = plt.hist(bkb_corr, alpha=0.5, rwidth=1, color=color2, label=label2,
+                      weights=np.zeros_like(bkb_corr) + 1. / bkb_corr.size,
+                      bins=np.arange(min(bkb_corr), max(bkb_corr) + binwidth, binwidth))
         #h3 = plt.hist(rand_corr, alpha=0.5, rwidth=0.85, color='grey', label="RC-networks (average)",
         #         weights=np.zeros_like(rand_corr) + 1. / rand_corr.size,
         #         bins=np.arange(min(rand_corr), max(rand_corr) + binwidth, binwidth))
-        h3 = plt.bar(bins_h3, h3_relfreq, width=rand_corr[0][1] - rand_corr[0][0], alpha=0.5, color='grey',
-                     label="RC-networks (average)", align='edge')
+        h3 = plt.bar(bins_h3, h3_relfreq, width=rand_corr[0][1] - rand_corr[0][0], alpha=0.5, color=color3,
+                     label=label3, align='edge')
         plt.grid(axis='y', alpha=0.75)
         plt.axvline(threshold, label='Global Threshold = '+str(threshold)+'\n('+str(np.around(percentile, 2))
                                      + ' Percentile)', color="red")

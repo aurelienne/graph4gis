@@ -75,7 +75,13 @@ avg_cluster = graph.Graph.get_average_clustering(g)
 avg_degree = graph.Graph.get_average_degree(g)
 diameter = g.diameter(directed=False)
 shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
+pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons = graph.Graph.get_components_stats(g)
+pcgt_heter = graph.Graph.heterogeneity(g)
+print("pcGT - Components:")
+print(pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons)
 #mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
+print("Heterogeneity:")
+print(pcgt_heter)
 
 # Backbone - Based on GT
 g_backbone = graph.Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
@@ -89,6 +95,13 @@ bkb_diameter = g_backbone.diameter(directed=False)
 print("\nbackbone:")
 print(bkb_avg_shortest_path, bkb_avg_cluster_coef, bkb_diameter, min(g_backbone.es['weight']), max(g_backbone.es['weight']))
 bkb_topol_dists = np.array(g_backbone.shortest_paths())
+print(len(g_backbone.clusters()))
+pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons = graph.Graph.get_components_stats(g_backbone)
+print("pcbb - Components:")
+print(pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons)
+pcbb_heter = graph.Graph.heterogeneity(g_backbone)
+print("Heterogeneity:")
+print(pcbb_heter)
 #mdists_bb = graph.Graph.get_manhattan_shortest_paths(g_backbone)
 
 # Mutual Information (Iuri)
@@ -101,12 +114,23 @@ with open('/dados/redes/Iuri/MI_complete_graph_edges.csv') as f:
         weight = float(cols[3])
         mi_matrix[source, target] = weight
 
-g_mi = graph.Graph.from_graphml('/dados/redes/Iuri/GraphML_MI/g_graph_backbone_max_diameter_MI.GraphML')
-print(g_mi.es['weight'])
+g_mi = graph.Graph.from_graphml('/dados/redes/Iuri/GraphML_MI/g_graph_max_diameter_MI.GraphML')
+print("migt - Components:")
+migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singletons = graph.Graph.get_components_stats(g_mi)
+print(migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singletons)
+migt_heter = graph.Graph.heterogeneity(g_mi)
+print("Heterogeneity:")
+print(migt_heter)
 
 # Backbone - based on MI
 g_backbone_mi = graph.Graph.from_correlation_matrix(mi_matrix, 0, df.xlist, df.ylist)
-g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g.es), matrix)
+g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g_mi.es), mi_matrix)
+print("mibb - Components:")
+mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons = graph.Graph.get_components_stats(g_backbone_mi)
+print(mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons)
+mibb_heter = graph.Graph.heterogeneity(g_backbone_mi)
+print("Heterogeneity:")
+print(mibb_heter)
 
 # Random networks (rewired)
 #avgshortpath_samples, avgcluster_samples, diameter_samples, avg_rand_graph_corr = stats.rewired_graph(g, 10, matrix, dists)
@@ -115,21 +139,25 @@ g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g.es), matrix)
 
 # Random network (Networkx Configuration Model) - GT
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-max_rand_graph_corr = graph.Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=30)
+max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=10000)
 print("Rede Aleatoria - Based on GT:")
 print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min_rand_graph_corr,
-      max_rand_graph_corr)
+      max_rand_graph_corr, avg_heter)
 idxs = np.triu_indices(matrix.shape[0], k=1)
 corr_matrix = matrix[idxs]
-out.Plots.plot_correlation_histogram3(corr_matrix, np.array(g_backbone.es['weight']), avg_rand_graph_corr, 0.86, "GT-network", "steelblue", "Pearson Correlation")
+out.Plots.plot_correlation_histogram3(corr_matrix, np.array(g_backbone.es['weight']), avg_rand_graph_corr, 0.86,
+                                      "pcGT-network", "#1e82ce", "pcBB-network", "#2d9d3a", "pcCM-networks (average)",
+                                      "grey", "Pearson Correlation Coefficient")
 
 # Random network (Networkx Configuration Model) - MI
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-max_rand_graph_corr = graph.Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=30)
+max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=10000)
 print("Rede Aleatoria - Based on MI:")
-print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), np.min(avg_rand_graph_corr),
-      np.max(avg_rand_graph_corr))
-out.Plots.plot_correlation_histogram3(np.array(g_mi.es['weight']), np.array(g_backbone_mi.es['weight']), avg_rand_graph_corr, 0, "MI-network", "orange", "Mutual Information")
+print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min_rand_graph_corr,
+      max_rand_graph_corr, avg_heter)
+out.Plots.plot_correlation_histogram3(mi_matrix[idxs], np.array(g_backbone_mi.es['weight']),
+                                      avg_rand_graph_corr, 0.6, "miGT-network", "#1cb8ec", "miBB-network", "#40ef55",
+                                      "miCM-networks (average)", "lightgrey", "Mutual Information Index")
 
 #plt = out.Plots(g)
 #plt.boxplot_random_samples(avgshortpath_samples, graph.Graph.get_average_shortest_path_mean(g), bkb_avg_shortest_path, 'Average Shortest Path')
@@ -163,7 +191,7 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 
 #g.plot("grafo.svg")
 
-out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
+#out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
 #out_csv = out.TextFiles(g)
 #out_csv.create_global_metrics_csv(threshold, "correlation_x_global_metrics.csv", avg_degree, avg_cluster, diameter, shortpath_mean)
 #out_csv.create_vertex_metrics_csv("vertex_metrics.csv")

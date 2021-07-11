@@ -24,6 +24,7 @@ class Graph:
         avgcluster_samples, avgshortpath_samples, diameter_samples = [], [], []
         avg_min_weight = 0
         avg_max_weight = 0
+        avg_heterogeneity = 0
         avg_weights = np.zeros(num_edges)
         i = 0
         while i <= samples:
@@ -51,6 +52,7 @@ class Graph:
             max_weight = np.max(np.array(weights))
             avg_min_weight = avg_min_weight + min_weight
             avg_max_weight = avg_max_weight + max_weight
+            avg_heterogeneity = avg_heterogeneity + Graph.heterogeneity(rg)
             #avg_weights = np.array(sorted(weights)) + avg_weights
             avgcluster_samples.append(rg.transitivity_avglocal_undirected())
             avgshortpath_samples.append(Graph.get_average_shortest_path_mean(rg))
@@ -74,7 +76,9 @@ class Graph:
         #plt.show()
         avg_min_weight = avg_min_weight / samples
         avg_max_weight = avg_max_weight / samples
-        return avgcluster_samples, avgshortpath_samples, diameter_samples, (avg_corr_bins, avg_corr_hist), avg_min_weight, avg_max_weight
+        avg_heterogeneity = avg_heterogeneity / samples
+        return avgcluster_samples, avgshortpath_samples, diameter_samples, (avg_corr_bins, avg_corr_hist), \
+               avg_min_weight, avg_max_weight, avg_heterogeneity
 
     def plot(filename, g):
         visual_style = {}
@@ -228,3 +232,12 @@ class Graph:
                 max_diameter = diameter
                 threshold_max_diameter = threshold
         return threshold_max_diameter
+
+    def heterogeneity(g):
+        degrees = g.degree()
+        acc = 0
+        for k in degrees:
+            acc = acc + k ** 2
+        avg = acc / len(degrees)
+        het = avg / (Graph.get_average_degree(g) ** 2)
+        return het

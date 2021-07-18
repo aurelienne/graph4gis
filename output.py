@@ -424,7 +424,7 @@ class Plots:
         plt.legend()
         plt.show()
 
-    def plot_distance_x_distance2(geo_dist1, geo_dist2, topol_dist, bkb_topol_dist):
+    def plot_distance_x_distance2(geo_dist1, geo_dist2, topol_dist, bkb_topol_dist, label1, label2, xlabel, ylabel):
         idxs = np.triu_indices(geo_dist1.shape[0], k=1)
         x1 = geo_dist1[idxs].flatten()
         x2 = geo_dist2[idxs].flatten()
@@ -446,12 +446,11 @@ class Plots:
         #print(np.mean(geo1), np.max(geo1))
         #print(np.mean(geo2), np.max(geo2))
         """
-        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color='steelblue', marker='.', label='GT-network')
-        plt.scatter(x2, y2, s=20, edgecolor=None, alpha=0.5, color='limegreen', marker='s', label='BB-network')
+        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color='steelblue', marker='.', label=label1)
+        plt.scatter(x2, y2, s=20, edgecolor=None, alpha=0.5, color='limegreen', marker='s', label=label2)
         plt.grid(axis='y', alpha=0.75)
-        plt.xlabel('Geographical Distance [km]')
-        #plt.ylabel('Topological Distance [number of edges]')
-        plt.ylabel('Manhattan Distance')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         #plt.title('Geographical Distance X Topological Distance')
         m, b = np.polyfit(x1, y1, 1)
         m2, b2 = np.polyfit(x2, y2, 1)

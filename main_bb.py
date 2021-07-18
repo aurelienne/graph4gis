@@ -5,6 +5,7 @@ from calc import Stats
 import output as out
 import numpy as np
 import configparser
+import os
 
 # Receive args
 config_file = sys.argv[1]
@@ -17,6 +18,7 @@ id_network = sys.argv[5]
 config = configparser.ConfigParser()
 config.read(config_file)
 out_dir = config['PATH']['OUTPUT']
+out_dir = os.path.join(out_dir, id_network)
 nx = int(config['GEO']['NX'])
 ny = int(config['GEO']['NY'])
 dx = float(config['GEO']['DX'])
@@ -37,22 +39,23 @@ stats = Stats()
 
 """
 data = np.genfromtxt('/dados/redes/2teste.txt', delimiter=',')
+#data = np.genfromtxt('/dados/redes/testesMI.txt', delimiter=',')
 d_bb0 = data[:, 0]
 d_bb1 = data[:, 1]
 d_bb2 = data[:, 2]
 d_gt = data[:, 3]
 print("BB0 X BB1:")
-stats.test_greater_distribution(d_bb0, d_bb1)
+stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_bb1[~np.isnan(d_bb1)])
 print("BB0 X BB2:")
-stats.test_greater_distribution(d_bb0, d_bb2)
+stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_bb2[~np.isnan(d_bb2)])
 print("BB0 X GT:")
-stats.test_greater_distribution(d_bb0, d_gt)
+stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_gt[~np.isnan(d_gt)])
 print("BB1 X BB2:")
-stats.test_greater_distribution(d_bb1, d_bb2)
+stats.test_greater_distribution(d_bb1[~np.isnan(d_bb1)], d_bb2[~np.isnan(d_bb2)])
 print("BB1 X GT:")
-stats.test_greater_distribution(d_bb1, d_gt)
+stats.test_greater_distribution(d_bb1[~np.isnan(d_bb1)], d_gt[~np.isnan(d_gt)])
 print("BB2 X GT:")
-stats.test_greater_distribution(d_bb2, d_gt)
+stats.test_greater_distribution(d_bb2[~np.isnan(d_bb2)], d_gt[~np.isnan(d_gt)])
 sys.exit()
 """
 
@@ -76,22 +79,25 @@ avg_degree = graph.Graph.get_average_degree(g)
 diameter = g.diameter(directed=False)
 shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
 pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons = graph.Graph.get_components_stats(g)
-pcgt_heter = graph.Graph.heterogeneity(g)
 print("pcGT - Components:")
 print(pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons)
 #mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
+pcgt_heter = graph.Graph.heterogeneity2(g)
+print("Heterogeneity:")
+print(pcgt_heter)
+pcgt_heter = graph.Graph.heterogeneity(g)
 print("Heterogeneity:")
 print(pcgt_heter)
 
 # Backbone - Based on GT
 g_backbone = graph.Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
-g_backbone = stats.test_backbone(g_backbone, len(g.es), matrix)
+g_backbone = stats.test_backbone(g_backbone, len(g.es), matrix, 0.127, 0.128, 0.001)
 g_backbone = graph.Graph.calculate_vertices_metrics(g_backbone)
 #clusters = g.clusters() # get connected components
 bkb_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_backbone)
 bkb_avg_cluster_coef = g_backbone.transitivity_avglocal_undirected()
 bkb_diameter = g_backbone.diameter(directed=False)
-#out.Shapefile(g_backbone, "backbone_"+str(threshold)).create_shape("", dx, dy)
+out.Shapefile(g_backbone, "backbone_"+str(threshold)).create_shape(out_dir, dx, dy)
 print("\nbackbone:")
 print(bkb_avg_shortest_path, bkb_avg_cluster_coef, bkb_diameter, min(g_backbone.es['weight']), max(g_backbone.es['weight']))
 bkb_topol_dists = np.array(g_backbone.shortest_paths())
@@ -99,6 +105,9 @@ print(len(g_backbone.clusters()))
 pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons = graph.Graph.get_components_stats(g_backbone)
 print("pcbb - Components:")
 print(pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons)
+pcbb_heter = graph.Graph.heterogeneity2(g_backbone)
+print("Heterogeneity:")
+print(pcbb_heter)
 pcbb_heter = graph.Graph.heterogeneity(g_backbone)
 print("Heterogeneity:")
 print(pcbb_heter)
@@ -121,16 +130,27 @@ print(migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singleton
 migt_heter = graph.Graph.heterogeneity(g_mi)
 print("Heterogeneity:")
 print(migt_heter)
+migt_topol_dists = np.array(g_mi.shortest_paths())
+print("<k> = "+str(graph.Graph.get_average_degree(g_mi)))
 
 # Backbone - based on MI
+print("mibb:")
 g_backbone_mi = graph.Graph.from_correlation_matrix(mi_matrix, 0, df.xlist, df.ylist)
-g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g_mi.es), mi_matrix)
+g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g_mi.es), mi_matrix, 0.1124, 0.1125, 0.0001)
+mibb_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_backbone_mi)
+mibb_avg_cluster_coef = g_backbone_mi.transitivity_avglocal_undirected()
+mibb_diameter = g_backbone_mi.diameter(directed=False)
+print(mibb_avg_shortest_path, mibb_avg_cluster_coef, mibb_diameter)
 print("mibb - Components:")
 mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons = graph.Graph.get_components_stats(g_backbone_mi)
 print(mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons)
+mibb_heter = graph.Graph.heterogeneity2(g_backbone_mi)
+print("Heterogeneity:")
+print(mibb_heter)
 mibb_heter = graph.Graph.heterogeneity(g_backbone_mi)
 print("Heterogeneity:")
 print(mibb_heter)
+mibb_topol_dists = np.array(g_backbone_mi.shortest_paths())
 
 # Random networks (rewired)
 #avgshortpath_samples, avgcluster_samples, diameter_samples, avg_rand_graph_corr = stats.rewired_graph(g, 10, matrix, dists)
@@ -138,6 +158,7 @@ print(mibb_heter)
 #print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min(avg_rand_graph_corr), max(avg_rand_graph_corr))
 
 # Random network (Networkx Configuration Model) - GT
+"""
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
 max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=10000)
 print("Rede Aleatoria - Based on GT:")
@@ -148,8 +169,10 @@ corr_matrix = matrix[idxs]
 out.Plots.plot_correlation_histogram3(corr_matrix, np.array(g_backbone.es['weight']), avg_rand_graph_corr, 0.86,
                                       "pcGT-network", "#1e82ce", "pcBB-network", "#2d9d3a", "pcCM-networks (average)",
                                       "grey", "Pearson Correlation Coefficient")
+"""
 
 # Random network (Networkx Configuration Model) - MI
+"""
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
 max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=10000)
 print("Rede Aleatoria - Based on MI:")
@@ -158,6 +181,7 @@ print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diamet
 out.Plots.plot_correlation_histogram3(mi_matrix[idxs], np.array(g_backbone_mi.es['weight']),
                                       avg_rand_graph_corr, 0.6, "miGT-network", "#1cb8ec", "miBB-network", "#40ef55",
                                       "miCM-networks (average)", "lightgrey", "Mutual Information Index")
+"""
 
 #plt = out.Plots(g)
 #plt.boxplot_random_samples(avgshortpath_samples, graph.Graph.get_average_shortest_path_mean(g), bkb_avg_shortest_path, 'Average Shortest Path')
@@ -212,7 +236,11 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #                                        xax='Geographical distance between pairs of points [km]')
 #plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
 #plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
-#out.Plots.plot_distance_x_distance2(dists, dists, mdists_gt, mdists_bb)
+out.Plots.plot_distance_x_distance2(dists, dists, topol_dists, bkb_topol_dists, "pcGT-Network", "pcBB-Network",
+                                    "Geographical Distance [km]",
+                                    "Topological Distance [number of edges]")
 #out.Plots.clustering_x_degree(g_backbone.vs['degree'], g_backbone.vs['clusterCoeficient'])
 
-#out.Plots.plot_distance_x_distance2(topol_dists, bkb_topol_dists, mdists_gt, mdists_bb)
+#out.Plots.plot_distance_x_distance2(dists, dists, migt_topol_dists, mibb_topol_dists, "miGT-Network", "miBB-Network",
+#                                    "Geographical Distance [km]",
+#                                    "Topological Distance [number of edges]")

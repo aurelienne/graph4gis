@@ -236,17 +236,20 @@ class Stats:
 
         return (pij)
 
-    def test_backbone(self, g, num_edges, corr_matrix):
+    def test_backbone(self, g, num_edges, corr_matrix, start_alfa, end_alfa, step_alfa):
         prev_dif = 9999
-        for alfa in np.arange(0.128, 0.129, 0.001):
-        #for alfa in np.arange(0.300, 0.320, 0.001):
+        best_alfa = 0
+        for alfa in np.arange(start_alfa, end_alfa, step_alfa):
             pij = Stats.backbone(g, alfa)
             dif = abs(len(pij) - num_edges)
-            if dif > prev_dif:
+            if dif < prev_dif:
+                best_alfa = alfa
+                prev_dif = dif
+                prev_pij = pij
+            if dif == 0:
                 break
-            prev_dif = dif
-            prev_pij = pij.copy()
-        print(alfa, prev_dif, dif)
+
+        print(best_alfa, prev_dif)
 
         # Delete edges and add only the most significant ones
         g.es.delete()

@@ -101,22 +101,39 @@ class Data:
                 break
             idx_delay = idx_delay + 1
 
-        corr_matrix = np.zeros((self.nx, self.ny, idx_delay), dtype=np.float16)
-        p_values = np.zeros((self.nx, self.ny, idx_delay), dtype=np.float16)
-        corr_matrix[:, :, 0] = self.get_pearson_correlation()
+        print("idx_delay = "+str(idx_delay))
+        corr_matrix = np.zeros((self.nx, self.ny), dtype=np.float16)
+        p_values = np.zeros((self.nx, self.ny), dtype=np.float16)
+        delay = np.zeros((self.nx, self.ny), dtype=np.float16)
+        corr_matrix[:, :] = self.get_pearson_correlation()
+        plt.hist(corr_matrix[corr_matrix>=0.75], bins=25)
+        plt.savefig('hist_corr.png')
+        plt.close()
         for x in range(self.nx):
             for y in range(self.ny):
                 for t in range(1, idx_delay):
                     t1_array = val_array[x, :-t]
                     t2_array = val_array[y, t:]
                     corr_value, p_value = scipy.stats.pearsonr(t1_array, t2_array)
-                    corr_matrix[x, y, t] = corr_value
-                    p_values[x, y, t] = p_value
+                    if corr_value > corr_matrix[x, y]:
+                        corr_matrix[x, y] = corr_value
+                        p_values[x, y] = p_value
+                        delay[x, y] = t
 
-        plt.boxplot([corr_matrix[:, :, 0].flatten(), p_values[:, :, 0].flatten(),
-                     corr_matrix[:, :, 1].flatten(), p_values[:, :, 1].flatten(),
-                     corr_matrix[:, :, 2].flatten(), p_values[:, :, 2].flatten()])
-        plt.show()
+        plt.hist(corr_matrix[corr_matrix>=0.75], bins=25)
+        plt.savefig('hist_corr_delay.png')
+        plt.close()
+        values, count = np.unique(delay, return_counts=True)
+        print("Values = "+str(values)+" Counts="+str(count))
+        idxs = np.argwhere(corr_matrix>=0.75)
+        print(len(idxs))
+        delay2=delay[idxs]
+        values, count = np.unique(delay2, return_counts=True)
+        print("correlation > 0.75:")
+        print("Values = "+str(values)+" Counts="+str(count))
+        #plt.boxplot(p_values[idxs])
+        #plt.savefig('boxplot_pvalues_delayed.png')
+        #plt.close()
         return corr_matrix
 
     def get_threshold_from_percentile(self, corr_matrix, percentile):

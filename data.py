@@ -134,7 +134,7 @@ class Data:
         #plt.boxplot(p_values[idxs])
         #plt.savefig('boxplot_pvalues_delayed.png')
         #plt.close()
-        return corr_matrix
+        return corr_matrix, p_values, delay
 
     def get_threshold_from_percentile(self, corr_matrix, percentile):
         idxs = np.triu_indices(corr_matrix.shape[0], k=1)

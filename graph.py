@@ -20,6 +20,20 @@ class Graph:
         graph.vs["y"] = ylist
         return graph
 
+    def set_pvalues(g, p_values):
+        adj_matrix = g.get_adjacency()
+        weight_array = np.array(adj_matrix.data)
+        idxs = np.where(weight_array == 1)
+        g.es["p_value"] = p_values[idxs]
+        return g
+
+    def set_timedelay(g, delay):
+        adj_matrix = g.get_adjacency()
+        weight_array = np.array(adj_matrix.data)
+        idxs = np.where(weight_array == 1)
+        g.es["t_delay"] = delay[idxs]
+        return g
+
     def randomize_graph(degree_list, matrix, num_edges, samples):
         avgcluster_samples, avgshortpath_samples, diameter_samples = [], [], []
         avg_min_weight = 0

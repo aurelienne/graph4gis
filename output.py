@@ -21,14 +21,16 @@ class Shapefile:
             dy = 0
         csvFile= path+"/"+self.filename+"_lines.csv"
         f = open(csvFile,'w')
-        f.write("Label,Lines,weight\n")
+        f.write("Label,Lines,weight,p_value,t_delay\n")
 
         for edge in self.g.get_edgelist():
             f.write('%s_%s,"'	%	(	self.g.vs[edge[0]]["label"], self.g.vs[edge[1]]["label"]	)	)
             f.write("LINESTRING ("																		)
             f.write("%s %s,"	%	(	self.g.vs[edge[0]]["x"]+ dx/2.,self.g.vs[edge[0]]["y"]+ dy/2.				)	)
             f.write('%s %s)",'	%	(	self.g.vs[edge[1]]["x"]+ dx/2.,self.g.vs[edge[1]]["y"]+ dy/2.				)	)
-            f.write("%f\n" 		%	(	self.g.es.find(_between=((edge[0],), (edge[1],)))['weight']	)	)
+            f.write("%f," 		%	(	self.g.es.find(_between=((edge[0],), (edge[1],)))['weight']	)	)
+            f.write("%f," % (self.g.es.find(_between=((edge[0],), (edge[1],)))['p_value']))
+            f.write("%f\n" % (self.g.es.find(_between=((edge[0],), (edge[1],)))["t_delay"]))
         f.close()
 
         vrt= path+"/"+self.filename+"_lines.vrt"
@@ -39,6 +41,8 @@ class Shapefile:
         f.write('<GeometryField encoding="WKT" field="Lines"/>'+"\n")
         f.write('<Field name="Label" src="Label" type="string" width="45" />'+"\n")
         f.write('<Field name="weight" src="weight" type="Real" 			  />'+"\n")
+        f.write('<Field name="p_value" src="p_value" type="Real" 			  />' + "\n")
+        f.write('<Field name="t_delay" src="t_delay" type="Real" 			  />' + "\n")
         f.write("</OGRVRTLayer>\n</OGRVRTDataSource>"+"\n")
         f.close()
 

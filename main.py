@@ -38,12 +38,12 @@ df = rd.Data(x1, y1, x2, y2, dx, dy, nx, ny)
 df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
 
 # Data Correlation
-matrix = df.get_pearson_correlation()
-#matrix = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
+#matrix = df.get_pearson_correlation()
+matrix, p_values, delay = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
 
 # Stats
-stats = Stats()
-#stats.pearson_significance_test(df.time_series)
+#stats = Stats()
+#p_values = stats.pearson_significance_test(df.time_series)
 #stats.shuffle(df.time_series, matrix, 100)
 #stats.ttest(len(df.time_series), 0.86, 0.05)
 
@@ -60,6 +60,9 @@ elif threshold_type == 'md':
     print(threshold)
 
 g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
+g = graph.Graph.set_pvalues(g, p_values)
+g = graph.Graph.set_timedelay(g, delay)
+print(g.es["t_delay"])
 #g.write_graphml('GT.GraphML')
 
 # Network metrics
@@ -83,10 +86,10 @@ print("reject = "+str(reject)+" p-value = "+str(pvalues))
 
 #g.plot("grafo.svg")
 
-#shp_filename = "grafo_" + "{:3.2f}".format(threshold)
-#out.Shapefile(g, shp_filename).create_shape(out_dir, dx, dy)
-out_csv = out.TextFiles(g)
-out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"))
+shp_filename = "grafo_" + "{:3.2f}".format(threshold)
+out.Shapefile(g, shp_filename).create_shape(out_dir, dx, dy)
+#out_csv = out.TextFiles(g)
+#out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"))
 #out_csv.create_vertex_metrics_csv(os.path.join(out_dir, "vertex_metrics.csv"))
 #out_csv.create_adjacency_list(os.path.join(out_dir, "adjacency_list.csv"))
 

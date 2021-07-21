@@ -46,18 +46,22 @@ class Stats:
         sys.exit()
 
     def pearson_significance_test(self, time_series):
-        with open('corr_test_100319.csv', mode='w') as csv_file:
-            writer = csv.writer(csv_file, delimiter=',')
-            writer.writerow(['r', 'p', 'ci_lo', 'ci_hi'])
+        #with open('corr_test_100319.csv', mode='w') as csv_file:
+        #    writer = csv.writer(csv_file, delimiter=',')
+        #    writer.writerow(['r', 'p', 'ci_lo', 'ci_hi'])
 
-            values = time_series.values
-            val_array = np.array(values.tolist()).transpose()
-            npoints = val_array.shape[0]
-            for i in range(npoints):
-                for j in range(i+1, npoints):
-                    r, p_val, ci_lo, ci_hi = self.pearsonr_ci(val_array[i], val_array[j])
-                    if r < ci_lo or r > ci_hi:
-                        writer.writerow([r, p_val, ci_lo, ci_hi])
+        values = time_series.values
+        val_array = np.array(values.tolist()).transpose()
+        npoints = val_array.shape[0]
+        p_vals = np.zeros((npoints, npoints))
+        for i in range(npoints):
+            for j in range(i+1, npoints):
+                r, p_val, ci_lo, ci_hi = self.pearsonr_ci(val_array[i], val_array[j])
+                p_vals[i, j] = p_val
+
+        #        if r < ci_lo or r > ci_hi:
+        #            writer.writerow([r, p_val, ci_lo, ci_hi])
+        return p_vals
 
     def pearsonr_ci(self, x, y, alpha=0.05):
         ''' calculate Pearson correlation along with the confidence interval using scipy and numpy
@@ -125,7 +129,7 @@ class Stats:
         # Slope and Beta
         m, b = np.polyfit(x, y, 1)
 
-        return reject, pvalue, b, m
+        return reject, pvalue, b, m, R2
 
     def test_greater_distribution(self, d1, d2):
         x, y = stats.mannwhitneyu(d1, d2, alternative='two-sided')

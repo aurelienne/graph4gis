@@ -82,9 +82,6 @@ pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons = gr
 print("pcGT - Components:")
 print(pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons)
 #mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
-pcgt_heter = graph.Graph.heterogeneity2(g)
-print("Heterogeneity:")
-print(pcgt_heter)
 pcgt_heter = graph.Graph.heterogeneity(g)
 print("Heterogeneity:")
 print(pcgt_heter)
@@ -105,9 +102,6 @@ print(len(g_backbone.clusters()))
 pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons = graph.Graph.get_components_stats(g_backbone)
 print("pcbb - Components:")
 print(pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons)
-pcbb_heter = graph.Graph.heterogeneity2(g_backbone)
-print("Heterogeneity:")
-print(pcbb_heter)
 pcbb_heter = graph.Graph.heterogeneity(g_backbone)
 print("Heterogeneity:")
 print(pcbb_heter)
@@ -132,6 +126,9 @@ print("Heterogeneity:")
 print(migt_heter)
 migt_topol_dists = np.array(g_mi.shortest_paths())
 print("<k> = "+str(graph.Graph.get_average_degree(g_mi)))
+mi_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_mi)
+mi_avg_cluster_coef = g_mi.transitivity_avglocal_undirected()
+
 
 # Backbone - based on MI
 print("mibb:")
@@ -144,9 +141,6 @@ print(mibb_avg_shortest_path, mibb_avg_cluster_coef, mibb_diameter)
 print("mibb - Components:")
 mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons = graph.Graph.get_components_stats(g_backbone_mi)
 print(mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons)
-mibb_heter = graph.Graph.heterogeneity2(g_backbone_mi)
-print("Heterogeneity:")
-print(mibb_heter)
 mibb_heter = graph.Graph.heterogeneity(g_backbone_mi)
 print("Heterogeneity:")
 print(mibb_heter)
@@ -157,6 +151,7 @@ mibb_topol_dists = np.array(g_backbone_mi.shortest_paths())
 #print("Rede Aleatoria:")
 #print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min(avg_rand_graph_corr), max(avg_rand_graph_corr))
 
+idxs = np.triu_indices(matrix.shape[0], k=1)
 # Random network (Networkx Configuration Model) - GT
 """
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
@@ -164,15 +159,14 @@ max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g.degree(), matrix,
 print("Rede Aleatoria - Based on GT:")
 print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min_rand_graph_corr,
       max_rand_graph_corr, avg_heter)
-idxs = np.triu_indices(matrix.shape[0], k=1)
 corr_matrix = matrix[idxs]
 out.Plots.plot_correlation_histogram3(corr_matrix, np.array(g_backbone.es['weight']), avg_rand_graph_corr, 0.86,
                                       "pcGT-network", "#1e82ce", "pcBB-network", "#2d9d3a", "pcCM-networks (average)",
-                                      "grey", "Pearson Correlation Coefficient")
-"""
+                                      "grey", "Pearson Correlation Coefficient",
+                                      "/dados/g4g/tamanduatei/graficos/hist_correlation_pc.png")
+
 
 # Random network (Networkx Configuration Model) - MI
-"""
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
 max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=10000)
 print("Rede Aleatoria - Based on MI:")
@@ -180,10 +174,21 @@ print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diamet
       max_rand_graph_corr, avg_heter)
 out.Plots.plot_correlation_histogram3(mi_matrix[idxs], np.array(g_backbone_mi.es['weight']),
                                       avg_rand_graph_corr, 0.6, "miGT-network", "#1cb8ec", "miBB-network", "#40ef55",
-                                      "miCM-networks (average)", "lightgrey", "Mutual Information Index")
+                                      "miCM-networks (average)", "lightgrey", "Mutual Information Index",
+                                      "/dados/g4g/tamanduatei/graficos/hist_correlation_mi.png")
 """
 
-#plt = out.Plots(g)
+# Statiscally Small World
+if stats.statistically_small_world(len(g.vs), len(g.es), shortpath_mean, avg_cluster):
+    print("pcGT: Small World!")
+if stats.statistically_small_world(len(g_backbone.vs), len(g_backbone.es), bkb_avg_shortest_path, bkb_avg_cluster_coef):
+    print("pcBB: Small World!")
+if stats.statistically_small_world(len(g_mi.vs), len(g_mi.es), mi_avg_shortest_path, mi_avg_cluster_coef):
+    print("miGT: Small World!")
+if stats.statistically_small_world(len(g_backbone_mi.vs), len(g_backbone_mi.es), mibb_avg_shortest_path, mibb_avg_cluster_coef):
+    print("miBB: Small World!")
+
+plt = out.Plots(g)
 #plt.boxplot_random_samples(avgshortpath_samples, graph.Graph.get_average_shortest_path_mean(g), bkb_avg_shortest_path, 'Average Shortest Path')
 #plt.boxplot_random_samples(avgcluster_samples, graph.Graph.get_average_clustering(g), bkb_avg_cluster_coef, 'Average Clustering Coefficient')
 #plt.boxplot_random_samples(diameter_samples, g.diameter(directed=False), bkb_diameter, 'Diameter')
@@ -222,6 +227,11 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #out_csv.create_adjacency_list("adjacency_list.csv")
 
 #out.Plots.plot_degree_histogram(g)
+plt.plot(g.degree_distribution())
+plt.title('Degree Distribution')
+plt.xlabel('Degree')
+plt.show()
+#out.Plots.plot_degree_histogram(g_mi)
 #out.Plots.plot_degree_histogram2(g, g_backbone)
 #out.Plots.plot_degree_distribution(g, g_backbone)
 #plt.plot_shortpath_histogram()
@@ -234,13 +244,33 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #plt.plot_grouped_correlation_x_distance(dists, matrix, title='Correlation X Geographical Distance',
 #                                        yax='Temporal correlation',
 #                                        xax='Geographical distance between pairs of points [km]')
+#plt.plot_grouped_correlation_x_distance(dists, mi_matrix, title='Correlation X Geographical Distance',
+#                                        yax='Mutual Information Index',
+#                                        xax='Geographical distance between pairs of points [km]')
 #plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
 #plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
-out.Plots.plot_distance_x_distance2(dists, dists, topol_dists, bkb_topol_dists, "pcGT-Network", "pcBB-Network",
-                                    "Geographical Distance [km]",
-                                    "Topological Distance [number of edges]")
+#out.Plots.plot_distance_x_distance2(dists, dists, topol_dists, bkb_topol_dists, "pcGT-Network", "pcBB-Network",
+#                                    "#1e82ce", "#2d9d3a",
+#                                    "Geographical Distance [km]",
+#                                    "Topological Distance [number of edges]",
+#                                    "/dados/g4g/tamanduatei/graficos/geo_x_topological_PC.png")
 #out.Plots.clustering_x_degree(g_backbone.vs['degree'], g_backbone.vs['clusterCoeficient'])
 
-#out.Plots.plot_distance_x_distance2(dists, dists, migt_topol_dists, mibb_topol_dists, "miGT-Network", "miBB-Network",
-#                                    "Geographical Distance [km]",
-#                                    "Topological Distance [number of edges]")
+out.Plots.plot_distance_x_distance2(dists, dists, migt_topol_dists, mibb_topol_dists, "miGT-Network", "miBB-Network",
+                                    "#1cb8ec", "#40ef55",
+                                    "Geographical Distance [km]",
+                                    "Topological Distance [number of edges]",
+                                    "/dados/g4g/tamanduatei/graficos/geo_x_topological_MI.png")
+
+idxs = np.triu_indices(dists.shape[0], k=1)
+#out.Plots.boxplot(dists[idxs], matrix[idxs], 20, title='Pearson Correlation', xlabel='Geographical Distance [km]')
+#out.Plots.boxplot(dists[idxs], mi_matrix[idxs], 20, title='Mutual Information', xlabel='Geographical Distance [km]')
+
+from matplotlib import pyplot as plt
+
+plt.scatter(matrix[idxs], mi_matrix[idxs])
+plt.ylabel('Mutual Information')
+plt.xlabel('Pearson Correlation')
+xpoints = ypoints = plt.xlim()
+plt.plot(xpoints, ypoints, linestyle='-', color='k', lw=2, scalex=False, scaley=False)
+plt.show()

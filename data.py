@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 
 class Data:
@@ -50,6 +51,15 @@ class Data:
         self.ny = len(self.ylist)
         index = pd.DatetimeIndex(date_list)
         self.time_series = pd.Series(data_list, index=index)
+
+        # Testes -- REMOVER!!!!
+        #values = self.time_series.values
+        #val_array = np.array(values.tolist()).transpose()
+        #ts = pd.Series(val_array[1], index=index)
+        #ts.plot()
+        #plt.ylabel("Reflectivity (dbz)")
+        #plt.show()
+        #sys.exit()
 
     def remove_nodata_points(self, data, nodata):
         # Remove nodata cells

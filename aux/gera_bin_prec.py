@@ -8,17 +8,19 @@ basename = os.path.basename(dbz_file)
 
 #nx = 666
 #ny = 666
-nx = 27
-ny = 29
-dbz = np.fromfile(dbz_file, dtype=np.float32).reshape(nx, ny)
-prec = np.full((nx, ny), -99.0, dtype=np.float32)
+#nx = 27
+#ny = 29
+nx = 48
+ny = 74
+dbz = np.fromfile(dbz_file, dtype=np.float32).reshape(ny, nx)
+prec = np.full((ny, nx), -99.0, dtype=np.float32)
 
 for x in range(nx):
     for y in range(ny):
-        if dbz[x, y] != -99 and dbz[x, y] <= 36:
-            prec[x, y] = ((10**(dbz[x, y]/10))/200)**0.625
-        elif dbz[x, y] > 36:
-            prec[x, y] = ((10**(dbz[x, y]/10))/300)**0.714
+        if dbz[y, x] != -99 and dbz[y, x] <= 36:
+            prec[y, x] = ((10**(dbz[y, x]/10))/200)**0.625
+        elif dbz[y, x] > 36:
+            prec[y, x] = ((10**(dbz[y, x]/10))/300)**0.714
 
 prec_file = os.path.join(path_out, basename)
 with open(prec_file, 'wb') as fn:  # Escrita do arquivo como binario

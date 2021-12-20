@@ -29,8 +29,8 @@ class Shapefile:
             f.write("%s %s,"	%	(	self.g.vs[edge[0]]["x"]+ dx/2.,self.g.vs[edge[0]]["y"]+ dy/2.				)	)
             f.write('%s %s)",'	%	(	self.g.vs[edge[1]]["x"]+ dx/2.,self.g.vs[edge[1]]["y"]+ dy/2.				)	)
             f.write("%f," 		%	(	self.g.es.find(_between=((edge[0],), (edge[1],)))['weight']	)	)
-            f.write("%f," % (self.g.es.find(_between=((edge[0],), (edge[1],)))['p_value']))
-            f.write("%f\n" % (self.g.es.find(_between=((edge[0],), (edge[1],)))["t_delay"]))
+            #f.write("%f," % (self.g.es.find(_between=((edge[0],), (edge[1],)))['p_value']))
+            #f.write("%f\n" % (self.g.es.find(_between=((edge[0],), (edge[1],)))["t_delay"]))
         f.close()
 
         vrt= path+"/"+self.filename+"_lines.vrt"
@@ -41,8 +41,8 @@ class Shapefile:
         f.write('<GeometryField encoding="WKT" field="Lines"/>'+"\n")
         f.write('<Field name="Label" src="Label" type="string" width="45" />'+"\n")
         f.write('<Field name="weight" src="weight" type="Real" 			  />'+"\n")
-        f.write('<Field name="p_value" src="p_value" type="Real" 			  />' + "\n")
-        f.write('<Field name="t_delay" src="t_delay" type="Real" 			  />' + "\n")
+        #f.write('<Field name="p_value" src="p_value" type="Real" 			  />' + "\n")
+        #f.write('<Field name="t_delay" src="t_delay" type="Real" 			  />' + "\n")
         f.write("</OGRVRTLayer>\n</OGRVRTDataSource>"+"\n")
         f.close()
 
@@ -250,7 +250,7 @@ class Plots:
 
     def plot_degree_histogram(g):
         degree_values = g.vs["degree"]
-        binwidth = 2
+        binwidth = 1
         plt.hist(degree_values, alpha=0.7, rwidth=2, histtype='bar',
                  bins=np.arange(min(degree_values), max(degree_values) + binwidth, binwidth))
         plt.grid(axis='y', alpha=0.75)
@@ -353,7 +353,7 @@ class Plots:
         plt.show()
 
     def plot_correlation_histogram3(corr_matrix, bkb_corr, rand_corr, threshold, label1, color1, label2, color2, label3,
-                                    color3, xlabel):
+                                    color3, xlabel, filename):
         percentile = scipy.stats.percentileofscore(corr_matrix, threshold)
         netwk_corr = corr_matrix[corr_matrix >= threshold]
         binwidth = 0.01
@@ -377,13 +377,14 @@ class Plots:
         plt.ylabel('Relative Frequency')
         #plt.title('Correlation Histogram')
         plt.legend(fontsize='medium')
-        plt.show()
+        plt.savefig(filename, dpi=300)
+        plt.close()
 
     def plot_correlation_x_distance(self, dists, corrs, title, yax='', xax=''):
         plt.plot(np.triu(dists), np.triu(corrs), ',r')
         plt.grid(axis='y', alpha=0.75)
-        plt.xlabel()
-        plt.ylabel()
+        plt.xlabel(xax)
+        plt.ylabel(yax)
         plt.title(title)
         plt.show()
 
@@ -428,7 +429,8 @@ class Plots:
         plt.legend()
         plt.show()
 
-    def plot_distance_x_distance2(geo_dist1, geo_dist2, topol_dist, bkb_topol_dist, label1, label2, xlabel, ylabel):
+    def plot_distance_x_distance2(geo_dist1, geo_dist2, topol_dist, bkb_topol_dist, label1, label2, color1, color2,
+                                  xlabel, ylabel, filename):
         idxs = np.triu_indices(geo_dist1.shape[0], k=1)
         x1 = geo_dist1[idxs].flatten()
         x2 = geo_dist2[idxs].flatten()
@@ -442,16 +444,16 @@ class Plots:
         x2 = x2[idx].flatten()
         y2 = y2[idx].flatten()
         #x2 = x[0:len(y2)]
-        """
-        #idx_dist1 = np.where(y1==1)
-        #idx_dist2 = np.where(y2==1)
-        #geo1 = x1[idx_dist1]
-        #geo2 = x2[idx_dist2]
-        #print(np.mean(geo1), np.max(geo1))
-        #print(np.mean(geo2), np.max(geo2))
-        """
-        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color='steelblue', marker='.', label=label1)
-        plt.scatter(x2, y2, s=20, edgecolor=None, alpha=0.5, color='limegreen', marker='s', label=label2)
+
+        idx_dist1 = np.where(y1==1)
+        idx_dist2 = np.where(y2==1)
+        geo1 = x1[idx_dist1]
+        geo2 = x2[idx_dist2]
+        print(np.mean(geo1), np.max(geo1))
+        print(np.mean(geo2), np.max(geo2))
+
+        plt.scatter(x1, y1, s=20, edgecolor=None, alpha=0.5, color=color1, marker='.', label=label1)
+        plt.scatter(x2, y2, s=20, edgecolor=None, alpha=0.5, color=color2, marker='s', label=label2)
         plt.grid(axis='y', alpha=0.75)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
@@ -478,7 +480,8 @@ class Plots:
         print("slope:")
         print(m, m2)
         plt.legend()
-        plt.show()
+        plt.savefig(filename, dpi=300)
+        plt.close()
 
     def boxplot_random_samples(self, samples, original_value, backbone_value, title):
         plt.boxplot(samples, patch_artist=True,
@@ -574,4 +577,23 @@ class Plots:
         plt.ylabel('Log of Clustering Coefficient (c)')
         plt.xscale('log')
         plt.yscale('log')
+        plt.show()
+
+    def boxplot(x_values, y_values, num_boxplots, title, xlabel):
+        x_values = np.array(x_values)
+        y_values = np.array(y_values)
+        df = pd.DataFrame({'x': x_values, 'y': y_values})
+        groups = np.linspace(min(x_values), max(x_values), num_boxplots)
+        x_groups = np.zeros(x_values.shape)
+        for ix in range(len(x_values)):
+            x = x_values[ix]
+            for ig in range(len(groups)):
+                if x >= groups[ig]:
+                    x_groups[ix] = groups[ig]
+        x_groups_labels = ["{:6.2f}".format(x) for x in x_groups]
+        df['x_group'] = x_groups_labels
+        df.boxplot('y', by='x_group', rot=90, fontsize='x-small')
+        plt.title(title)
+        plt.suptitle('')
+        plt.xlabel(xlabel)
         plt.show()

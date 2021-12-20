@@ -27,6 +27,7 @@ while datehour <= end:
     files = glob.glob(os.path.join(dir_input, pattern1)) + glob.glob(os.path.join(dir_input, pattern2))
     nfiles = len(files)
     for file in sorted(files):
+        print(file)
         prec = np.fromfile(file.strip(), dtype=np.float32).reshape(NX, NY)
         np.place(prec, prec==-99, 0.0)
         np.place(prec, prec<1, 0.0)

@@ -67,15 +67,12 @@ class Graph:
             avg_min_weight = avg_min_weight + min_weight
             avg_max_weight = avg_max_weight + max_weight
             avg_heterogeneity = avg_heterogeneity + Graph.heterogeneity(rg)
-            #avg_weights = np.array(sorted(weights)) + avg_weights
             avgcluster_samples.append(rg.transitivity_avglocal_undirected())
             avgshortpath_samples.append(Graph.get_average_shortest_path_mean(rg))
             diameter_samples.append(rg.diameter(directed=False))
 
             weights = np.array(weights)
             corr_hist = np.histogram(weights, bins=100, range=(0, 1))
-            if corr_hist[0][99] > 0:
-                print(weights[weights>=0.98])
             if i == 0:
                 avg_corr_hist = corr_hist[0]
             else:
@@ -83,11 +80,8 @@ class Graph:
 
             i = i + 1
 
-        #avg_weights = avg_weights / samples
         avg_corr_bins = np.arange(0, 1, 0.01)
         avg_corr_hist = avg_corr_hist / samples / num_edges
-        #plt.bar(bins, avg_corr_hist, color='blue', width=0.01)
-        #plt.show()
         avg_min_weight = avg_min_weight / samples
         avg_max_weight = avg_max_weight / samples
         avg_heterogeneity = avg_heterogeneity / samples

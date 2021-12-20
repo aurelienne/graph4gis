@@ -265,3 +265,13 @@ class Stats:
         g.es['weight'] = weights
 
         return g
+
+    def statistically_small_world(self, N, L, avg_shortest_path, avg_cluster_coef):
+        p = 2 * L / (N * (N - 1))
+        avg_degree_rand = (p * (N - 1))
+        avg_clust_rand = p
+        avg_shortpath_rand = math.log(N) / math.log(avg_degree_rand)
+        print("l_rand = " + str(avg_shortpath_rand) + " / c_rand = "+str(avg_clust_rand))
+        if avg_cluster_coef > avg_clust_rand and avg_shortest_path < avg_shortpath_rand:
+            return True
+        return False

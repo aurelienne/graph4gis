@@ -1,9 +1,7 @@
 import igraph
 import numpy as np
 import networkx
-import output as out
-import calc
-import matplotlib.pyplot as plt
+import datetime
 
 class Graph:
 
@@ -249,3 +247,69 @@ class Graph:
         avg = acc / len(degrees)
         het = avg / (Graph.get_average_degree(g) ** 2)
         return het
+
+    def backbone(g, alpha):
+        # Implementação do Iuri Diniz (UFOP)
+        print("Starting backbone - "+str(datetime.datetime.now()))
+
+        # pij = (1 - (wij/si))**(ki - 1), onde:
+        # w --> weight
+        # s --> strength
+        # k --> degree
+        p = {}
+        adj = g.get_adjacency()
+        n_nodes = g.vcount()
+        strength = g.strength(weights=g.es['weight'])
+        for i in range(n_nodes):
+            for j in range(n_nodes):
+                if (adj[i, j] == 1):  # verificando se há conexão entre o par i,j
+                    w = g.es[g.get_eid(i, j)]['weight']
+                    s = strength[i]  # calcula o strength de toda a rede e retorna apenas para o nó desejado
+                    k = g.vs[i].degree()
+                    pij = (1 - (w / s)) ** (k - 1)
+                    if (pij < alpha):  # aplicando a relação com o alpha
+                        p[i, j] = pij
+
+        # Pegando os pares simétricos e atribuindo -99 ao par com maior valor de probabilidade
+        for i in p:
+            if ((i[0], i[1]) and (i[1], i[0])) in p.keys():
+                if p[i[0], i[1]] <= p[i[1], i[0]]:
+                    p[i[1], i[0]] = -99
+                else:
+                    p[i[0], i[1]] = -99
+
+        # Criando dicionário com os pares válidos
+        pij = {}
+        for i in p:
+            if not (p[i] == -99):
+                pij[i] = p[i]
+
+        print("Ending backbone - "+str(datetime.datetime.now()))
+
+        return (pij)
+
+    def test_backbone(g, num_edges, corr_matrix, start_alfa, end_alfa, step_alfa):
+        prev_dif = 9999
+        best_alfa = 0
+        for alfa in np.arange(start_alfa, end_alfa, step_alfa):
+            pij = Graph.backbone(g, alfa)
+            dif = abs(len(pij) - num_edges)
+            if dif < prev_dif:
+                best_alfa = alfa
+                prev_dif = dif
+                prev_pij = pij
+            if dif == 0:
+                break
+
+        print(best_alfa, prev_dif)
+
+        # Delete edges and add only the most significant ones
+        g.es.delete()
+        g.add_edges(prev_pij.keys())
+        g.es['prob'] = list(prev_pij.values())
+        weights = []
+        for edge in g.es:
+            weights.append(corr_matrix[edge.source, edge.target])
+        g.es['weight'] = weights
+
+        return g

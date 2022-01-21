@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 
 
 class Data:

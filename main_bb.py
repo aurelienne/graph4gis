@@ -1,6 +1,6 @@
 import sys
 import data as rd
-import graph
+from graph import Graph
 from calc import Stats
 import output as out
 import numpy as np
@@ -37,61 +37,43 @@ df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
 matrix = df.get_pearson_correlation()
 stats = Stats()
 
+# Test greater distribution
 """
 data = np.genfromtxt('/dados/redes/2teste.txt', delimiter=',')
-#data = np.genfromtxt('/dados/redes/testesMI.txt', delimiter=',')
 d_bb0 = data[:, 0]
-d_bb1 = data[:, 1]
-d_bb2 = data[:, 2]
 d_gt = data[:, 3]
-print("BB0 X BB1:")
-stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_bb1[~np.isnan(d_bb1)])
-print("BB0 X BB2:")
-stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_bb2[~np.isnan(d_bb2)])
 print("BB0 X GT:")
 stats.test_greater_distribution(d_bb0[~np.isnan(d_bb0)], d_gt[~np.isnan(d_gt)])
-print("BB1 X BB2:")
-stats.test_greater_distribution(d_bb1[~np.isnan(d_bb1)], d_bb2[~np.isnan(d_bb2)])
-print("BB1 X GT:")
-stats.test_greater_distribution(d_bb1[~np.isnan(d_bb1)], d_gt[~np.isnan(d_gt)])
-print("BB2 X GT:")
-stats.test_greater_distribution(d_bb2[~np.isnan(d_bb2)], d_gt[~np.isnan(d_gt)])
-sys.exit()
 """
 
-#stats.pearson_significance_test(df.time_series)
-#stats.shuffle(df.time_series, matrix, 100)
-#stats.ttest(len(df.time_series), 0.86, 0.05)
-
 dists = df.get_euclidean_distances()
-#df.get_neighbours()
 
 # Global-Threshold Network
 if threshold_type == 'p':
     percentile = threshold
     threshold = df.get_threshold_from_percentile(matrix, percentile)
-g = graph.Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
-graph.Graph.calculate_vertices_metrics(g)
-g.vs["shortestPathMean"] = graph.Graph.get_shortest_path_mean(g)
+g = Graph.from_correlation_matrix(matrix, threshold, df.xlist, df.ylist)
+Graph.calculate_vertices_metrics(g)
+g.vs["shortestPathMean"] = Graph.get_shortest_path_mean(g)
 topol_dists = np.array(g.shortest_paths())
-avg_cluster = graph.Graph.get_average_clustering(g)
-avg_degree = graph.Graph.get_average_degree(g)
+avg_cluster = Graph.get_average_clustering(g)
+avg_degree = Graph.get_average_degree(g)
 diameter = g.diameter(directed=False)
-shortpath_mean = graph.Graph.get_average_shortest_path_mean(g)
-pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons = graph.Graph.get_components_stats(g)
+shortpath_mean = Graph.get_average_shortest_path_mean(g)
+pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons = Graph.get_components_stats(g)
 print("pcGT - Components:")
 print(pcgt_ncomponents, pcgt_maxcomponent_v, pcgt_maxcomponent_e, pcgt_singletons)
-#mdists_gt = graph.Graph.get_manhattan_shortest_paths(g)
-pcgt_heter = graph.Graph.heterogeneity(g)
+#mdists_gt = Graph.get_manhattan_shortest_paths(g)
+pcgt_heter = Graph.heterogeneity(g)
 print("Heterogeneity:")
 print(pcgt_heter)
 
 # Backbone - Based on GT
-g_backbone = graph.Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
-g_backbone = stats.test_backbone(g_backbone, len(g.es), matrix, 0.127, 0.128, 0.001)
-g_backbone = graph.Graph.calculate_vertices_metrics(g_backbone)
+g_backbone = Graph.from_correlation_matrix(matrix, 0, df.xlist, df.ylist)
+g_backbone = Graph.test_backbone(g_backbone, len(g.es), matrix, 0.127, 0.128, 0.001)
+g_backbone = Graph.calculate_vertices_metrics(g_backbone)
 #clusters = g.clusters() # get connected components
-bkb_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_backbone)
+bkb_avg_shortest_path = Graph.get_average_shortest_path_mean(g_backbone)
 bkb_avg_cluster_coef = g_backbone.transitivity_avglocal_undirected()
 bkb_diameter = g_backbone.diameter(directed=False)
 out.Shapefile(g_backbone, "backbone_"+str(threshold)).create_shape(out_dir, dx, dy)
@@ -99,13 +81,12 @@ print("\nbackbone:")
 print(bkb_avg_shortest_path, bkb_avg_cluster_coef, bkb_diameter, min(g_backbone.es['weight']), max(g_backbone.es['weight']))
 bkb_topol_dists = np.array(g_backbone.shortest_paths())
 print(len(g_backbone.clusters()))
-pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons = graph.Graph.get_components_stats(g_backbone)
+pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons = Graph.get_components_stats(g_backbone)
 print("pcbb - Components:")
 print(pcbb_ncomponents, pcbb_maxcomponent_v, pcbb_maxcomponent_e, pcbb_singletons)
-pcbb_heter = graph.Graph.heterogeneity(g_backbone)
+pcbb_heter = Graph.heterogeneity(g_backbone)
 print("Heterogeneity:")
 print(pcbb_heter)
-#mdists_bb = graph.Graph.get_manhattan_shortest_paths(g_backbone)
 
 # Mutual Information (Iuri)
 mi_matrix = np.zeros((587, 587))
@@ -117,45 +98,41 @@ with open('/dados/redes/Iuri/MI_complete_graph_edges.csv') as f:
         weight = float(cols[3])
         mi_matrix[source, target] = weight
 
-g_mi = graph.Graph.from_graphml('/dados/redes/Iuri/GraphML_MI/g_graph_max_diameter_MI.GraphML')
+g_mi = Graph.from_graphml('/dados/redes/Iuri/GraphML_MI/g_graph_max_diameter_MI.GraphML')
 print("migt - Components:")
-migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singletons = graph.Graph.get_components_stats(g_mi)
+migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singletons = Graph.get_components_stats(g_mi)
 print(migt_ncomponents, migt_maxcomponent_v, migt_maxcomponent_e, migt_singletons)
-migt_heter = graph.Graph.heterogeneity(g_mi)
+migt_heter = Graph.heterogeneity(g_mi)
 print("Heterogeneity:")
 print(migt_heter)
 migt_topol_dists = np.array(g_mi.shortest_paths())
-print("<k> = "+str(graph.Graph.get_average_degree(g_mi)))
-mi_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_mi)
+print("<k> = "+str(Graph.get_average_degree(g_mi)))
+mi_avg_shortest_path = Graph.get_average_shortest_path_mean(g_mi)
 mi_avg_cluster_coef = g_mi.transitivity_avglocal_undirected()
 
 
 # Backbone - based on MI
 print("mibb:")
-g_backbone_mi = graph.Graph.from_correlation_matrix(mi_matrix, 0, df.xlist, df.ylist)
-g_backbone_mi = stats.test_backbone(g_backbone_mi, len(g_mi.es), mi_matrix, 0.1124, 0.1125, 0.0001)
-mibb_avg_shortest_path = graph.Graph.get_average_shortest_path_mean(g_backbone_mi)
+g_backbone_mi = Graph.from_correlation_matrix(mi_matrix, 0, df.xlist, df.ylist)
+g_backbone_mi = Graph.test_backbone(g_backbone_mi, len(g_mi.es), mi_matrix, 0.1124, 0.1125, 0.0001)
+mibb_avg_shortest_path = Graph.get_average_shortest_path_mean(g_backbone_mi)
 mibb_avg_cluster_coef = g_backbone_mi.transitivity_avglocal_undirected()
 mibb_diameter = g_backbone_mi.diameter(directed=False)
 print(mibb_avg_shortest_path, mibb_avg_cluster_coef, mibb_diameter)
 print("mibb - Components:")
-mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons = graph.Graph.get_components_stats(g_backbone_mi)
+mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons = Graph.get_components_stats(g_backbone_mi)
 print(mibb_ncomponents, mibb_maxcomponent_v, mibb_maxcomponent_e, mibb_singletons)
-mibb_heter = graph.Graph.heterogeneity(g_backbone_mi)
+mibb_heter = Graph.heterogeneity(g_backbone_mi)
 print("Heterogeneity:")
 print(mibb_heter)
 mibb_topol_dists = np.array(g_backbone_mi.shortest_paths())
 
-# Random networks (rewired)
-#avgshortpath_samples, avgcluster_samples, diameter_samples, avg_rand_graph_corr = stats.rewired_graph(g, 10, matrix, dists)
-#print("Rede Aleatoria:")
-#print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min(avg_rand_graph_corr), max(avg_rand_graph_corr))
-
 idxs = np.triu_indices(matrix.shape[0], k=1)
+
 # Random network (Networkx Configuration Model) - GT
 """
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=10000)
+max_rand_graph_corr, avg_heter = Graph.randomize_graph(g.degree(), matrix, len(g.es), samples=10000)
 print("Rede Aleatoria - Based on GT:")
 print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min_rand_graph_corr,
       max_rand_graph_corr, avg_heter)
@@ -168,7 +145,7 @@ out.Plots.plot_correlation_histogram3(corr_matrix, np.array(g_backbone.es['weigh
 
 # Random network (Networkx Configuration Model) - MI
 avgcluster_samples, avgshortpath_samples, diameter_samples, avg_rand_graph_corr, min_rand_graph_corr, \
-max_rand_graph_corr, avg_heter = graph.Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=10000)
+max_rand_graph_corr, avg_heter = Graph.randomize_graph(g_mi.degree(), mi_matrix, len(g_mi.es), samples=10000)
 print("Rede Aleatoria - Based on MI:")
 print(np.mean(avgshortpath_samples), np.mean(avgcluster_samples), np.mean(diameter_samples), min_rand_graph_corr,
       max_rand_graph_corr, avg_heter)
@@ -188,12 +165,7 @@ if stats.statistically_small_world(len(g_mi.vs), len(g_mi.es), mi_avg_shortest_p
 if stats.statistically_small_world(len(g_backbone_mi.vs), len(g_backbone_mi.es), mibb_avg_shortest_path, mibb_avg_cluster_coef):
     print("miBB: Small World!")
 
-plt = out.Plots(g)
-#plt.boxplot_random_samples(avgshortpath_samples, graph.Graph.get_average_shortest_path_mean(g), bkb_avg_shortest_path, 'Average Shortest Path')
-#plt.boxplot_random_samples(avgcluster_samples, graph.Graph.get_average_clustering(g), bkb_avg_cluster_coef, 'Average Clustering Coefficient')
-#plt.boxplot_random_samples(diameter_samples, g.diameter(directed=False), bkb_diameter, 'Diameter')
 
-#sys.exit()
 """
 print("Regression T-Test:")
 idxs = np.triu_indices(dists.shape[0], k=1)
@@ -218,6 +190,11 @@ np.savetxt("gt_topol_dists.csv", y1, delimiter=",")
 np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 """
 
+#### PLOTS
+plt = out.Plots(g)
+#plt.boxplot_random_samples(avgshortpath_samples, Graph.get_average_shortest_path_mean(g), bkb_avg_shortest_path, 'Average Shortest Path')
+#plt.boxplot_random_samples(avgcluster_samples, Graph.get_average_clustering(g), bkb_avg_cluster_coef, 'Average Clustering Coefficient')
+#plt.boxplot_random_samples(diameter_samples, g.diameter(directed=False), bkb_diameter, 'Diameter')
 #g.plot("grafo.svg")
 
 #out.Shapefile(g, "grafo_"+str(threshold)).create_shape("", dx, dy)
@@ -227,10 +204,6 @@ np.savetxt("bb_topol_dists.csv", y2, delimiter=",")
 #out_csv.create_adjacency_list("adjacency_list.csv")
 
 #out.Plots.plot_degree_histogram(g)
-plt.plot(g.degree_distribution())
-plt.title('Degree Distribution')
-plt.xlabel('Degree')
-plt.show()
 #out.Plots.plot_degree_histogram(g_mi)
 #out.Plots.plot_degree_histogram2(g, g_backbone)
 #out.Plots.plot_degree_distribution(g, g_backbone)
@@ -265,12 +238,3 @@ out.Plots.plot_distance_x_distance2(dists, dists, migt_topol_dists, mibb_topol_d
 idxs = np.triu_indices(dists.shape[0], k=1)
 #out.Plots.boxplot(dists[idxs], matrix[idxs], 20, title='Pearson Correlation', xlabel='Geographical Distance [km]')
 #out.Plots.boxplot(dists[idxs], mi_matrix[idxs], 20, title='Mutual Information', xlabel='Geographical Distance [km]')
-
-from matplotlib import pyplot as plt
-
-plt.scatter(matrix[idxs], mi_matrix[idxs])
-plt.ylabel('Mutual Information')
-plt.xlabel('Pearson Correlation')
-xpoints = ypoints = plt.xlim()
-plt.plot(xpoints, ypoints, linestyle='-', color='k', lw=2, scalex=False, scaley=False)
-plt.show()

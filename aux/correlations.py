@@ -1,46 +1,16 @@
 import sys
 import pandas as pd
-import numpy as np
 import scipy
-import calc
-from matplotlib import pyplot as plt
 import igraph
-import datetime
 
 data_file = sys.argv[1]
 
 df = pd.read_csv(data_file, index_col='id')
 
-#meteo_metrics = ["duracao", "pico_pmax", "pico_pmed", "pico_area_km2", "pico_area_px", "vel_min", "vel_med", "vel_max",
-#                 "area_min", "area_med", "area_max", "pmed_med", "pmax_med", "num_eventos_simult", "delta_reflet"]
 meteo_metrics = ["duration", "peak-reflect_max", "peak-reflect_avg", "peak-area", "avg-speed", "max-speed",
                  "avg-area", "max-area", "avg-reflect_avg", "avg-reflect_max", "delta-reflect"]
-#netwk_metrics = ["vertices", "edges", "cluster_coef", "avg_degree", "diameter", "shortpath_mean",
-#                 "avg_betweeness", "num_components", "giant_component_v", "singletons"]
 netwk_metrics = ["vertices", "edges", "cluster_coef", "avg_degree", "diameter", "shortpath_mean",
                  "num_components", "giant_component", "singletons", "t_delay"]
-
-# Histogramas
-"""
-for netwk_metric in netwk_metrics:
-    pyplot.hist(df[netwk_metric].values, bins=30)
-    pyplot.title(netwk_metric)
-    pyplot.show()
-for meteo_metric in meteo_metrics:
-    pyplot.hist(df[meteo_metric].values, bins=30)
-    pyplot.title(meteo_metric)
-    pyplot.show()
-"""
-
-# Dispersão
-#for netwk_metric in netwk_metrics:
-#    pyplot.scatter(df[netwk_metric].values, df["duracao"].values)
-#    pyplot.title(netwk_metric + " x Duração")
-#    pyplot.show()
-#for meteo_metric in meteo_metrics:
-#    pyplot.scatter(df[meteo_metric].values, df["duracao"].values)
-#    pyplot.title(meteo_metric + " x Duração")
-#    pyplot.show()
 
 df1 = df.loc[(df["duration"] <= 2)]
 df2 = df.loc[(df["duration"] > 5)]
@@ -48,26 +18,11 @@ df5 = df.loc[(df["max-area"] <= 300)]
 df6 = df.loc[(df["max-area"] >= 5000)]
 df1_5 = pd.merge(df1, df5, how='inner', on=['id'])
 df2_6 = pd.merge(df2, df6, how='inner', on=['id'])
-print(df2_6)
-sys.exit()
 
 print(len(df1))
 print(len(df2))
 print(len(df5))
 print(len(df6))
-#sys.exit()
-#print(df["max-area"].values)
-#plt.hist(df5["max-area"].values, bins=30)
-#plt.title("max-area")
-#plt.show()
-#plt.hist(df6["max-area"].values, bins=30)
-#plt.title("max-area")
-#plt.show()
-plt.scatter(df5["max-area"].values, df5["diameter"].values)
-plt.show()
-plt.scatter(df6["max-area"].values, df6["diameter"].values)
-plt.show()
-#sys.exit()
 
 cont = 0
 g = igraph.Graph(directed=False)
@@ -77,21 +32,10 @@ g.vs['color'] = ['grey' for i in range(len(meteo_metrics))] + ['orange' for i in
 
 weights = []
 for meteo_metric in meteo_metrics:
-    #for meteo_metric2 in meteo_metrics:
     for netwk_metric in netwk_metrics:
         print(netwk_metric, meteo_metric)
         x1 = df[meteo_metric].values
         y1 = df[netwk_metric].values
-        #y2 = df2[netwk_metric].values
-        #y3 = df5[netwk_metric].values
-        #y4 = df6[netwk_metric].values
-
-        #plt.boxplot([y1, y2, y3, y4])
-        #plt.title(netwk_metric)
-        #plt.show()
-
-        #reject, pvalue, b, m, R2 = calc.Stats().ttest_regression(df3[meteo_metric].values,
-        #                                                         df3[netwk_metric].values)
         corr = scipy.stats.pearsonr(x1, y1)
         r = corr[0]
         p = corr[1]
@@ -104,7 +48,6 @@ for meteo_metric in meteo_metrics:
             g.add_edge(g.vs.find(label=netwk_metric), g.vs.find(label=meteo_metric))
 
             weights.append(r)
-            #           print(r, p)
             cont = cont + 1
 
         #plt.scatter(df[meteo_metric].values, df[netwk_metric].values)
@@ -129,23 +72,11 @@ for weight in weights:
         widths.append(5)
 
 g.es['width'] = widths
-#neg_corr = [es for es in g.es if es['weight'] < 0]
-#neg_corr = g.es.select('weight'<0)
-#neg_corr['color'] = 'red'
 layout = g.layout("circular")
 for v in g.vs:
     print(v['label'] + '=' + str(g.strength(v, weights=weights, mode='all')))
 
-#fig, ax = plt.subplots()
-#igraph.plot(g, layout=layout, vertex_size=30, vertex_label_size=12, margin=[40, 40, 40, 40], target=ax)
 igraph.plot(g, layout=layout, vertex_size=30, vertex_label_size=12, margin=[40, 40, 40, 40], target='graph_D2.pdf')
-#plt.show()
-
-#degrees = np.array(g.degree())
-#vmax = np.argmax(degrees)
-#print(g.vs[vmax]['label'])
-for v in g.vs:
-    print(v['label'], v.degree(), v.betweenness())
 
 # Métricas dos eventos no tempo
 """
@@ -162,7 +93,6 @@ for netwk_metric in netwk_metrics:
 """
 
 # Eventos que intersectam no tempo
-#for id_evento in df.index.values:
 """
 ig = 0
 for rowi in range(len(df.index.values)):

@@ -41,12 +41,6 @@ df.import_bin_from_list(input_list, dbz_min, dt_pos_ini, dt_pos_fim, dt_format)
 #matrix = df.get_pearson_correlation()
 matrix, p_values, delay = df.get_pearson_correlation_timedelay(datetime.timedelta(minutes=10))
 
-# Stats
-#stats = Stats()
-#p_values = stats.pearson_significance_test(df.time_series)
-#stats.shuffle(df.time_series, matrix, 100)
-#stats.ttest(len(df.time_series), 0.86, 0.05)
-
 #dists = df.get_euclidean_distances()
 #df.get_neighbours()
 
@@ -84,24 +78,22 @@ reject, pvalues, b, slope = stats.ttest_regression(x1, y1)
 print("reject = "+str(reject)+" p-value = "+str(pvalues))
 """
 
-#g.plot("grafo.svg")
-
 shp_filename = "grafo_" + "{:3.2f}".format(threshold)
 out.Shapefile(g, shp_filename).create_shape(out_dir, dx, dy)
-#out_csv = out.TextFiles(g)
-#out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"))
-#out_csv.create_vertex_metrics_csv(os.path.join(out_dir, "vertex_metrics.csv"))
-#out_csv.create_adjacency_list(os.path.join(out_dir, "adjacency_list.csv"))
+out_csv = out.TextFiles(g)
+out_csv.create_global_metrics_csv(threshold, os.path.join(out_dir, "correlation_x_global_metrics.csv"))
+out_csv.create_vertex_metrics_csv(os.path.join(out_dir, "vertex_metrics.csv"))
+out_csv.create_adjacency_list(os.path.join(out_dir, "adjacency_list.csv"))
 
-#plt = out.Plots(g)
-#plt.plot_shortpath_histogram()
-#plt.plot_correlation_histogram(matrix, threshold=0.86)
+plt = out.Plots(g)
+plt.plot_shortpath_histogram()
+plt.plot_correlation_histogram(matrix, threshold=0.86)
 
-#plt.plot_correlation_x_distance(dists, matrix, title='Correlation X Euclidean Distance',
-#                                yax='Temporal Correlation',
-#                                xax='Geographical Distance between pairs of points (km)')
-#plt.plot_grouped_correlation_x_distance(dists, matrix, title='Correlation X Geographical Distance',
-#                                        yax='Temporal correlation',
-#                                        xax='Geographical distance between pairs of points [km]')
-#plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
-#plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
+plt.plot_correlation_x_distance(dists, matrix, title='Correlation X Euclidean Distance',
+                                yax='Temporal Correlation',
+                                xax='Geographical Distance between pairs of points (km)')
+plt.plot_grouped_correlation_x_distance(dists, matrix, title='Correlation X Geographical Distance',
+                                        yax='Temporal correlation',
+                                        xax='Geographical distance between pairs of points [km]')
+plt.plot_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')
+plt.plot_grouped_correlation_x_distance(topol_dists, matrix, title='Correlation X Topological Distance')

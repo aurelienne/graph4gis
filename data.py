@@ -18,7 +18,7 @@ class Data:
         self.dy = dy
         x = np.arange(x1, x2, dx)[0:nx]
         y = np.arange(y1, y2, dy)[0:ny]
-        xx, yy = np.meshgrid(x,y)
+        xx, yy = np.meshgrid(x, y)
         self.xlist = xx.flatten()
         self.ylist = yy.flatten()
         self.nx = len(self.xlist)

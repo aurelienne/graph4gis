@@ -11,11 +11,12 @@ class Graph:
         graph = igraph.Graph.Read_GraphML(gml)
         return graph
 
-    def from_correlation_matrix(matrix, threshold, xlist, ylist):
+    def from_correlation_matrix(matrix, threshold, xlist, ylist, label_list):
         matrix = np.nan_to_num(matrix)
         matrix[matrix < threshold] = 0.0
         graph = igraph.Graph.Weighted_Adjacency((matrix).tolist(), mode='undirected', attr="weight", loops=False)
-        graph.vs["label"] = np.arange(len(xlist))
+        #graph.vs["label"] = np.arange(len(xlist))
+        graph.vs["label"] = label_list
         graph.vs["x"] = xlist
         graph.vs["y"] = ylist
         return graph

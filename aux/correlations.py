@@ -1,7 +1,9 @@
 import sys
 import pandas as pd
-import scipy
+from scipy import stats
 import igraph
+from matplotlib import pyplot as plt
+import numpy as np
 
 data_file = sys.argv[1]
 
@@ -34,18 +36,29 @@ weights = []
 for meteo_metric in meteo_metrics:
     for netwk_metric in netwk_metrics:
         print(netwk_metric, meteo_metric)
-        x1 = df[meteo_metric].values
-        y1 = df[netwk_metric].values
-        corr = scipy.stats.pearsonr(x1, y1)
+        x1 = df6[meteo_metric].values
+        y1 = df6[netwk_metric].values
+        corr = stats.pearsonr(x1, y1)
         r = corr[0]
         p = corr[1]
 
         #print(r, p)
         if p > 0.05:
             continue
-        if r <= -0.4 or r >= 0.4:
+        if r <= -0.4 or r >= 0.6:
+            print(r)
             print(netwk_metric, meteo_metric, r, p)
             g.add_edge(g.vs.find(label=netwk_metric), g.vs.find(label=meteo_metric))
+            plt.scatter(x1, y1, marker='.')
+            m, b = np.polyfit(x1, y1, 1)
+            plt.title('Network Metric x Meteorological property')
+            plt.plot(x1, m * x1 + b, color='darkblue', label='y={:.2f}'.format(m)+'x+{:.2f}'.format(b))
+            plt.xlabel(meteo_metric)
+            plt.ylabel(netwk_metric)
+            plt.grid()
+            print(m, b)
+            plt.legend()
+            plt.show()
 
             weights.append(r)
             cont = cont + 1
@@ -54,6 +67,7 @@ for meteo_metric in meteo_metrics:
         #plt.scatter(df["max-area"].values, df[netwk_metric].values)
         #plt.title(meteo_metric + " x " + netwk_metric)
         #plt.show()
+sys.exit()
 
 # Grafo das metricas
 g.es['weight'] = weights

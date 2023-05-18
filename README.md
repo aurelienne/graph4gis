@@ -33,5 +33,3 @@ Izabelly C. Costa
 
 # References
 JORGE, A. A. S.; COSTA I.C.; SANTOS L.B.L. Geographical Complex Networks applied to describe meteorological data. In: Proceedings XXI GEOINFO;2020. P.258–263. 
-JORGE, A. A. S.; DINIZ, I. S.; FREITAS, V. L. S.; COSTA I.C.; SANTOS L.B.L. Global-threshold and backbone high-resolution weather radar networks are significantly complementary in a watershed. Submitted to Computers & Geosciences.
-JORGE, A. A. S.; COSTA I.C.; SANTOS L.B.L. Relations between topological metrics and meteorological properties in precipitation events based on weather radar networks. To be submitted.
